@@ -1,0 +1,69 @@
+package es.upm.trading.agents;
+
+import es.upm.trading.behaviours.AnalysisBehaviour;
+import es.upm.trading.behaviours.TradingStateFSM;
+import es.upm.trading.ml.WekaClassifier;
+import es.upm.trading.utils.Utils;
+
+import jade.core.Agent;
+import jade.core.behaviours.OneShotBehaviour;
+
+
+/**
+ * Agente predictor / inteligente del sistema de trading.
+ *
+ * Responsabilidades:
+ *   1. Registrarse en el DF como proveedor del servicio "predictor".
+ *   2. Inicializar el clasificador Weka J48 y la FSM de estados.
+ *   3. Escuchar mensajes REQUEST con MarketData (AnalysisBehaviour).
+ *   4. Clasificar los datos con J48 y emitir TradingSignal como INFORM.
+ *   5. Mantener el estado actual de trading (BUY/SELL/HOLD) en la FSM.
+ *
+ * Requisitos del enunciado cubiertos:
+ *   - Agente con capacidad de cálculo complejo / inteligente (árbol J48 + CV)
+ *   - Comportamientos JADE: OneShotBehaviour + CyclicBehaviour + FSMBehaviour
+ *   - Filtro de mensajes en modo bloqueante (MessageTemplate en AnalysisBehaviour)
+ *   - Registro en DF y búsqueda de otros agentes
+ */
+public class AgentePredictor extends Agent {
+
+    private static final long serialVersionUID = 11L;
+
+    private WekaClassifier  wekaClassifier;
+    private TradingStateFSM stateFSM;
+
+    @Override
+    protected void setup() {
+        System.out.println("[AgentePredictor] Iniciando...");
+
+        // ── Inicializar subsistemas ───────────────────────────────
+        wekaClassifier = new WekaClassifier();
+        stateFSM       = new TradingStateFSM(this);
+
+        // ── 1. Registro en el DF (OneShotBehaviour) ──────────────
+        addBehaviour(new OneShotBehaviour(this) {
+            @Override
+            public void action() {
+                Utils.registerService(myAgent,
+                        Utils.SERVICE_PREDICTOR,
+                        "Clasificador J48 de señales de trading");
+            }
+        });
+
+        // ── 2. Máquina de estados FSM ─────────────────────────────
+        addBehaviour(stateFSM);
+
+        // ── 3. Comportamiento de análisis (escucha mensajes) ──────
+        addBehaviour(new AnalysisBehaviour(this, wekaClassifier, stateFSM));
+
+        System.out.println("[AgentePredictor] Listo. Esperando datos de mercado.");
+    }
+
+    @Override
+    protected void takeDown() {
+        Utils.deregisterService(this);
+        System.out.printf("[AgentePredictor] Terminado. Estado final: %s | P&L: %.2f%%%n",
+                stateFSM.getCurrentAction(), stateFSM.getPnl());
+    }
+}
+
