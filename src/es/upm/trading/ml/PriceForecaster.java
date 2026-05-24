@@ -12,72 +12,51 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Predictor de precio futuro usando Weka M5P (árbol de modelo).
- *
- * M5P combina un árbol de decisión con regresiones lineales en las hojas,
- * capturando tanto relaciones no lineales como tendencias locales.
- * No referencia Capabilities directamente, por lo que no dispara la cadena
- * WekaPackageManager -> injectMTJ. Está incluido en weka.jar.
- *
- * Para ejecutar sin el InaccessibleObjectException de Java 17+, añadir
- * en Eclipse (Run Configurations -> VM arguments):
- *   --add-opens java.base/java.lang=ALL-UNNAMED
- *   --add-opens java.base/java.util=ALL-UNNAMED
- *   --add-opens java.base/java.io=ALL-UNNAMED
- *
- * Features por instancia (ventana deslizante enriquecida):
- *   - WINDOW_SIZE precios normalizados consecutivos
- *   - tendencia: pendiente OLS sobre la ventana (captura dirección)
- *   - volatilidad: desviación estándar de la ventana (captura riesgo)
+ * Predictor de precio futuro usando Weka M5P.
+ * 
  *
  * Predicción iterativa: predice t+1, lo mete en la ventana, predice t+2,
  * y así hasta stepsAhead (1, 3 o 5).
- *
- * Temas del material aplicados:
- *  - Regresión supervisada con Weka / M5P (ML_GII, Ejemplo_Weka)
- *  - Feature engineering enriquecido: tendencia y volatilidad (slides2)
- *  - Preprocesamiento: normalización (slides2)
- *  - Evaluación: R² (ML_GII)
- *  - Pipeline KDD (slides1)
  */
 public class PriceForecaster {
 
     private static final int WINDOW_SIZE  = 5;
     public  static final int MIN_SAMPLES  = 20;
 
-    // Features: WINDOW_SIZE precios + tendencia + volatilidad
     private static final int NUM_FEATURES = WINDOW_SIZE + 2;
 
-    // ─────────────────────────────────────────────────────────────
-    //  API principal
-    // ─────────────────────────────────────────────────────────────
-
-    public PredictionResult predict(String coinId,
-                                    List<Double> priceHistory,
-                                    int stepsAhead) {
+    
+    /**
+     * Prediuce el precio de una moneda específica en N intervalos futuros
+     *
+     * @param coinId  id de la moneda (e.g. "bitcoin")
+     * @param priceHistory  histórico de precios de la moneda 
+     * @param stepsAhead  intervalos a futuro que se quieren predecir
+     * @return resultado de la predicción
+     */
+    public PredictionResult predict(String coinId, List<Double> priceHistory, int stepsAhead) {
         if (priceHistory == null || priceHistory.size() < MIN_SAMPLES) {
             return null;
         }
 
         try {
-            // ── 1. Normalizar (÷ primer precio) ───────────────────
+            // Normalizar todos los precios dividiendolos  entre le primero para trabajar con valores cercanos al 1
             double base = priceHistory.get(0) != 0 ? priceHistory.get(0) : 1.0;
             List<Double> norm = new ArrayList<>();
             for (double p : priceHistory) norm.add(p / base);
 
-            // ── 2. Construir dataset Weka con features enriquecidas
+            // Construir dataset Weka con precios normalizados
             Instances dataset = buildDataset(norm);
 
-            // ── 3. Entrenar M5P ───────────────────────────────────
+            // Entrenar M5P
             M5P m5p = new M5P();
             m5p.buildClassifier(dataset);
 
-            // ── 4. R² sobre datos de entrenamiento ────────────────
+            // R² sobre datos de entrenamiento
             double r2 = computeR2(m5p, dataset);
 
-            // ── 5. Predicción iterativa N pasos ───────────────────
-            List<Double> window = new ArrayList<>(
-                    norm.subList(norm.size() - WINDOW_SIZE, norm.size()));
+            // Predicción iterativa N pasos
+            List<Double> window = new ArrayList<>(norm.subList(norm.size() - WINDOW_SIZE, norm.size()));
 
             double predictedNorm = 0;
             for (int step = 0; step < stepsAhead; step++) {
@@ -87,12 +66,11 @@ public class PriceForecaster {
                 window.add(predictedNorm);
             }
 
-            // ── 6. Desnormalizar ──────────────────────────────────
+            // Desnormalizar
             double currentPrice   = priceHistory.get(priceHistory.size() - 1);
             double predictedPrice = predictedNorm * base;
 
-            return new PredictionResult(coinId, stepsAhead,
-                    currentPrice, predictedPrice, r2);
+            return new PredictionResult(coinId, stepsAhead, currentPrice, predictedPrice, r2);
 
         } catch (Exception e) {
             System.err.println("[PriceForecaster] Error: " + e.getMessage());
@@ -100,18 +78,14 @@ public class PriceForecaster {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Construcción del dataset Weka
-    // ─────────────────────────────────────────────────────────────
-
     /**
      * Construye el dataset de entrenamiento con features enriquecidas.
      *
      * Cada instancia:
-     *   t-4, t-3, t-2, t-1, t  → precios normalizados de la ventana
-     *   tendencia               → pendiente OLS (captura si sube o baja)
-     *   volatilidad             → desviación estándar (captura dispersión)
-     *   target                  → precio en t+1 normalizado
+     *   t-4, t-3, t-2, t-1, t  -> precios normalizados de la ventana
+     *   tendencia  -> pendiente OLS (captura si sube o baja)
+     *   volatilidad  -> desviación estándar (captura dispersión)
+     *   target  -> precio en t+1 normalizado
      */
     private Instances buildDataset(List<Double> norm) {
         ArrayList<Attribute> attrs = new ArrayList<>();
@@ -132,40 +106,40 @@ public class PriceForecaster {
             for (int j = 0; j < WINDOW_SIZE; j++) {
                 inst.setValue(j, window.get(j));
             }
-            inst.setValue(WINDOW_SIZE,     computeTrend(window));
+            inst.setValue(WINDOW_SIZE, computeTrend(window));
             inst.setValue(WINDOW_SIZE + 1, computeVolatility(window));
-            inst.setValue(NUM_FEATURES,    norm.get(i));
+            inst.setValue(NUM_FEATURES, norm.get(i));
             dataset.add(inst);
         }
         return dataset;
     }
 
+    
+    
+    
     private Instance buildInstance(List<Double> window, Instances dataset) {
         Instance inst = new DenseInstance(NUM_FEATURES + 1);
         inst.setDataset(dataset);
         for (int i = 0; i < WINDOW_SIZE; i++) {
             inst.setValue(i, window.get(i));
         }
-        inst.setValue(WINDOW_SIZE,     computeTrend(window));
+        inst.setValue(WINDOW_SIZE, computeTrend(window));
         inst.setValue(WINDOW_SIZE + 1, computeVolatility(window));
         inst.setMissing(NUM_FEATURES);
         return inst;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Features derivadas
-    // ─────────────────────────────────────────────────────────────
 
     /**
      * Pendiente de la recta de mínimos cuadrados sobre la ventana.
-     * Positiva = tendencia alcista, negativa = bajista.
+     * Positiva = tendencia al alza, negativa = a la baja.
      */
     private double computeTrend(List<Double> window) {
         int n = window.size();
         double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
         for (int i = 0; i < n; i++) {
-            sumX  += i;
-            sumY  += window.get(i);
+            sumX += i;
+            sumY += window.get(i);
             sumXY += i * window.get(i);
             sumX2 += i * i;
         }
@@ -187,9 +161,7 @@ public class PriceForecaster {
         return Math.sqrt(variance / n);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Evaluación R²
-    // ─────────────────────────────────────────────────────────────
+    
 
     private double computeR2(M5P model, Instances dataset) throws Exception {
         double mean = 0;
@@ -201,7 +173,7 @@ public class PriceForecaster {
         double ssTot = 0, ssRes = 0;
         for (int i = 0; i < dataset.numInstances(); i++) {
             Instance inst = dataset.instance(i);
-            double actual    = inst.classValue();
+            double actual = inst.classValue();
             double predicted = model.classifyInstance(inst);
             ssTot += Math.pow(actual - mean, 2);
             ssRes += Math.pow(actual - predicted, 2);
