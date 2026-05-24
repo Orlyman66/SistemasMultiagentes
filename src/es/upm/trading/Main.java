@@ -8,38 +8,26 @@ import jade.wrapper.AgentController;
 
 /**
  * Clase principal que lanza la plataforma JADE y los tres agentes del sistema.
- *
- * Uso:
- *   java -cp jade.jar:weka.jar:. es.upm.trading.Main [simbolo]
- *
- * Ejemplo:
- *   java -cp lib/jade.jar:lib/weka.jar:bin es.upm.trading.Main bitcoin
- *
- *
- * Equivalente al patrón Main.java del ejemplo JADE_2024-25_7_Ejemplo_Image.pdf
- * que lanza JADE desde código Java en lugar de usar jade.Boot.
  */
 public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        String symbol = (args.length > 0) ? args[0] : "bitcoin";
-        System.out.println("=== Trading MAS — Iniciando con símbolo: " + symbol + " ===");
+        String symbol = "bitcoin";
+        System.out.println("=== Sistema Multiagéntico de Trading — Iniciando. ===");
 
-        // ── 1. Crear el runtime JADE ──────────────────────────────
+        // Crear el runtime JADE
         Runtime rt = Runtime.instance();
 
-        // ── 2. Crear el contenedor principal ─────────────────────
-        Profile profile = new ProfileImpl();
-        profile.setParameter(Profile.MAIN_HOST, "localhost");
-        profile.setParameter(Profile.MAIN_PORT, "1099");
-        profile.setParameter(Profile.GUI, "true"); // lanzar RMA GUI de JADE
+        // Crear el contenedor principal
+        Profile profile = new ProfileImpl(); //Host: localhost, Port: 1099
+        profile.setParameter(Profile.GUI, "true"); // lanzar GUI de JADE
 
         AgentContainer mainContainer = rt.createMainContainer(profile);
 
-        // ── 3. Crear los agentes ──────────────────────────────────
-        // El orden importa: UI y Predictor primero (deben estar en DF
-        // cuando Adquisicion empiece a buscarlos)
+        // Crear los agentes
+        // Primero se crean el UI y el Predictor ya que tienen que estar disponibles 
+        // para el Adquisicion cuando los empiece a buscar
 
         AgentController uiAgent = mainContainer.createNewAgent(
                 "AgenteUI",
@@ -59,12 +47,12 @@ public class Main {
                 new Object[]{symbol}
         );
 
-        // ── 4. Arrancar los agentes ───────────────────────────────
+        // Arrancar los agentes
         uiAgent.start();
         Thread.sleep(500); // pequeña pausa para que el DF se registre
 
         predictorAgent.start();
-        Thread.sleep(500);
+        Thread.sleep(500); // pequeña pausa para que el DF se registre
 
         adquisicionAgent.start();
 
@@ -72,6 +60,6 @@ public class Main {
         System.out.println("    AgenteUI         → recibe INFORM (precios + señales)");
         System.out.println("    AgentePredictor  → recibe REQUEST (MarketData) → J48");
         System.out.println("    AgenteAdquisicion→ TickerBehaviour cada 30s");
-        System.out.println("    Usa el GUI JADE (RMA) para inspeccionar agentes y mensajes.");
+        System.out.println("    GUI de JADE activado.");
     }
 }

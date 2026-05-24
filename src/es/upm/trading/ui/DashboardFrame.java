@@ -16,28 +16,26 @@ import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
+/*
  * Ventana principal del sistema de trading.
  *
- * Paneles:
- *   ┌─────────────────────────────────────────────┐
- *   │  HEADER: símbolo + precio actual + señal    │
+ * Paneles: | HEADER: símbolo + precio actual + señal │
  *   ├─────────────┬───────────────────────────────┤
  *   │  GRÁFICA    │  TABLA DE SEÑALES             │
  *   │  de precios │  (scroll)                     │
  *   ├─────────────┴───────────────────────────────┤
  *   │  BARRA DE ESTADO: muestras / accuracy       │
  *   └─────────────────────────────────────────────┘
- *
- * Temas de clase:
- *   - JFrame, JPanel, JTable, JLabel, BorderLayout (PDF5)
- *   - Integración con agente mediante hilo MainGUI (PDF5, Ejemplo Weka)
- *   - paintComponent para gráfica sin librerías externas
+ * - JFrame, JPanel, JTable, JLabel, BorderLayout (ejemplo Clase)
+ * - Integración con agente mediante hilo MainGUI (ejemplo Weka)
  */
 public class DashboardFrame extends JFrame {
 
     private static final long serialVersionUID = 7L;
 
+    private String espacio="Monospaced";
+
+    
     // ── Componentes UI ───────────────────────────────────────────
     private final JLabel  lblSymbol    = new JLabel("–");
     private final JLabel  lblPrice     = new JLabel("–");
@@ -55,7 +53,7 @@ public class DashboardFrame extends JFrame {
     private String activeCoinId = "";   // coin activa para pasarla al PredictionPanel
     private final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
-    /**
+    /*
      * Callback que conecta la UI con AgenteAdquisicion.
      * Se asigna desde AgenteUI tras crear el dashboard.
      * Cuando el usuario selecciona una moneda, se llama con su id CoinGecko.
@@ -63,13 +61,13 @@ public class DashboardFrame extends JFrame {
     private Consumer<String> onCoinSelected = coinId -> {}; // no-op por defecto
 
     public DashboardFrame(String initialCoinId) {
-        super("Trading MAS — Dashboard");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        super("Sistema Multiagéntico de Trading");
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(1080, 700);
         setMinimumSize(new Dimension(800, 560));
         setLocationRelativeTo(null);
 
-        this.activeCoinId = initialCoinId;
+        activeCoinId = initialCoinId;
         chartPanel      = new PriceChartPanel();
         tableModel      = buildTableModel();
         signalTable     = buildSignalTable();
@@ -81,18 +79,23 @@ public class DashboardFrame extends JFrame {
         setVisible(true);
     }
 
-    /** Compatibilidad con código que llame al constructor sin argumento */
+    /* Compatibilidad con código que llame al constructor sin argumento */
     public DashboardFrame() {
         this("bitcoin");
     }
 
-    /** Registra el callback que se llama cuando el usuario cambia de moneda */
+    /* Registra el callback que se llama cuando el usuario cambia de moneda */
     public void setOnCoinSelected(Consumer<String> callback) {
-        this.onCoinSelected = callback;
+        onCoinSelected = callback;
+    }
+
+    /* Devuelve el panel de predicción para que AgenteUI registre su referencia */
+    public PredictionPanel getPredictionPanel() {
+        return predictionPanel;
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Construcción de la UI
+    //  Construcción de la UI (Users Interface)
     // ─────────────────────────────────────────────────────────────
 
     private void buildUI() {
@@ -108,19 +111,20 @@ public class DashboardFrame extends JFrame {
     private JPanel buildHeaderPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 8));
         panel.setBackground(new Color(30, 30, 46));
-
-        lblSymbol.setFont(new Font("Monospaced", Font.BOLD, 20));
+        
+        
+        lblSymbol.setFont(new Font(espacio, Font.BOLD, 20));
         lblSymbol.setForeground(Color.WHITE);
 
-        lblPrice.setFont(new Font("Monospaced", Font.BOLD, 26));
+        lblPrice.setFont(new Font(espacio, Font.BOLD, 26));
         lblPrice.setForeground(new Color(80, 220, 160));
 
-        lblSignal.setFont(new Font("Monospaced", Font.BOLD, 18));
+        lblSignal.setFont(new Font(espacio, Font.BOLD, 18));
         lblSignal.setOpaque(true);
         lblSignal.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
         setSignalBadge(Action.HOLD);
 
-        JLabel titleLbl = new JLabel("Trading MAS");
+        JLabel titleLbl = new JLabel("Sistema de Trading");
         titleLbl.setFont(new Font("SansSerif", Font.PLAIN, 13));
         titleLbl.setForeground(new Color(150, 150, 170));
 
@@ -152,7 +156,7 @@ public class DashboardFrame extends JFrame {
         JPanel bar = new JPanel(new BorderLayout());
         bar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
         lblStatus.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
-        lblStatus.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        lblStatus.setFont(new Font(espacio, Font.PLAIN, 11));
         lblStatus.setForeground(new Color(100, 100, 120));
         bar.add(lblStatus, BorderLayout.WEST);
         return bar;
@@ -169,7 +173,7 @@ public class DashboardFrame extends JFrame {
 
     private JTable buildSignalTable() {
         JTable table = new JTable(tableModel);
-        table.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        table.setFont(new Font(espacio, Font.PLAIN, 12));
         table.setRowHeight(22);
         table.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
 
@@ -199,7 +203,7 @@ public class DashboardFrame extends JFrame {
             table.getColumnModel().getColumn(i).setCellRenderer(renderer);
         }
 
-        // Anchos de columna
+        // Ajustar los Anchos de cada columna
         table.getColumnModel().getColumn(0).setPreferredWidth(65);
         table.getColumnModel().getColumn(1).setPreferredWidth(70);
         table.getColumnModel().getColumn(2).setPreferredWidth(50);
@@ -214,7 +218,7 @@ public class DashboardFrame extends JFrame {
     //  Métodos públicos llamados desde UpdateUIBehaviour (EDT)
     // ─────────────────────────────────────────────────────────────
 
-    /**
+    /*
      * Cambia la gráfica a la serie completa de una moneda.
      * Carga todos los puntos acumulados en MultiCoinDataStore desde el arranque.
      * Llamado cuando el usuario selecciona una moneda en CoinSelectorPanel.
@@ -246,7 +250,7 @@ public class DashboardFrame extends JFrame {
         loadSignalHistory(coinId);
     }
 
-    /**
+    /*
      * Rellena la tabla de señales con el historial almacenado para una moneda.
      * Muestra como máximo 50 filas (las más recientes primero).
      * Si hay menos de 50, muestra las que haya.
@@ -279,7 +283,7 @@ public class DashboardFrame extends JFrame {
         setSignalBadge(signals.get(0).getAction());
     }
 
-    /**
+    /*
      * Actualiza el contador de puntos acumulados en el panel lateral
      * para una moneda concreta. Llamado por cada tick de cualquier moneda.
      */
@@ -287,7 +291,7 @@ public class DashboardFrame extends JFrame {
         coinSelector.updatePointCount(coinId, count);
     }
 
-    /** Limpia la gráfica al cambiar de moneda (usado internamente). */
+    /* Limpia la gráfica al cambiar de moneda (usado internamente). */
     public void clearChart() {
         chartPanel.clear();
         lblPrice.setText("–");
@@ -296,7 +300,7 @@ public class DashboardFrame extends JFrame {
         lblStatus.setText("Cambiando de moneda...");
     }
 
-    /**
+    /*
      * Actualiza el precio en el header y añade el punto a la gráfica.
      * Solo se llama para la moneda activa.
      */
@@ -308,7 +312,7 @@ public class DashboardFrame extends JFrame {
         updateStatusBar(data);
     }
 
-    /**
+    /*
      * Añade una fila a la tabla de señales y actualiza el badge de señal.
      */
     public void addSignal(TradingSignal signal) {
@@ -328,7 +332,7 @@ public class DashboardFrame extends JFrame {
         setSignalBadge(signal.getAction());
     }
 
-    /** Actualiza el badge de señal activa en el header */
+    /* Actualiza el badge de señal activa en el header */
     public void setSignalBadge(Action action) {
         lblSignal.setText(action.name());
         switch (action) {
@@ -346,7 +350,7 @@ public class DashboardFrame extends JFrame {
         }
     }
 
-    /** Actualiza la barra de estado con info del tick recibido */
+    /* Actualiza la barra de estado con info del tick recibido */
     public void updateStatusBar(MarketData data) {
         lblStatus.setText(String.format(
                 "Último tick: %s | Δ5m: %.2f%% | Δ10m: %.2f%% | Δ30m: %.2f%% | Vol24h: %.1fB",
@@ -358,7 +362,7 @@ public class DashboardFrame extends JFrame {
         ));
     }
 
-    /** Actualiza el label de estado con info del clasificador */
+    /* Actualiza el label de estado con info del clasificador */
     public void updateModelStats(int samples, int minSamples, double accuracy) {
         if (samples < minSamples) {
             lblStatus.setText(String.format(
@@ -370,3 +374,4 @@ public class DashboardFrame extends JFrame {
         }
     }
 }
+

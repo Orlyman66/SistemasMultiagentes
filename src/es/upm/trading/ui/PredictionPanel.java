@@ -1,32 +1,33 @@
 package es.upm.trading.ui;
 
+import es.upm.trading.agents.AgenteUI;
 import es.upm.trading.ml.PriceForecaster;
-import es.upm.trading.model.MultiCoinDataStore;
 import es.upm.trading.model.PredictionResult;
 import es.upm.trading.model.TradingSignal.Action;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
 import java.util.function.Supplier;
 
 /**
  * Panel de predicción de precio futuro.
  *
- * Permite al usuario seleccionar un horizonte (10, 25 o 50 intervalos)
- * y lanzar una predicción sobre la moneda activa pulsando un botón.
+ * Cuando el usuario pulsa "Predecir", este panel NO calcula nada localmente.
+ * En su lugar delega en AgenteUI, que envía un mensaje ACL REQUEST al
+ * AgentePredictor (ontología "trading-prediction"). El resultado llega de
+ * vuelta como INFORM y es procesado por ForecastResultBehaviour, que llama
+ * a showForecastResult() o showInsufficientData() en este panel.
  *
- * La predicción se ejecuta en un SwingWorker para no bloquear el EDT.
- * El resultado se muestra en el propio panel con precio predicho,
- * variación %, recomendación coloreada y nivel de confianza (R²).
- *
- * Si no hay suficientes datos se muestra un mensaje informativo.
+ * Flujo de mensajes:
+ *   PredictionPanel → AgenteUI.sendForecastRequest()
+ *     → [REQUEST trading-prediction] → AgentePredictor (ForecastBehaviour)
+ *     → [INFORM  trading-prediction] → AgenteUI (ForecastResultBehaviour)
+ *     → PredictionPanel.showForecastResult()
  */
 public class PredictionPanel extends JPanel {
 
     private static final long serialVersionUID = 40L;
 
-    // ── Opciones de horizonte ────────────────────────────────────
     private static final int[] STEPS = {1, 3, 5};
 
     // ── Componentes ──────────────────────────────────────────────
@@ -41,10 +42,11 @@ public class PredictionPanel extends JPanel {
     private final JLabel lblConfidence   = new JLabel(" ");
     private final JLabel lblLoading      = new JLabel(" ");
 
-    /** Provee el coinId activo (lambda inyectada desde DashboardFrame) */
+    /** Provee el coinId activo desde DashboardFrame */
     private final Supplier<String> activeCoinSupplier;
 
-    private final PriceForecaster forecaster = new PriceForecaster();
+    /** Referencia al agente para enviar mensajes ACL */
+    private AgenteUI agente;
 
     public PredictionPanel(Supplier<String> activeCoinSupplier) {
         this.activeCoinSupplier = activeCoinSupplier;
@@ -96,7 +98,7 @@ public class PredictionPanel extends JPanel {
         result.setBackground(new Color(28, 28, 42));
         result.setBorder(BorderFactory.createEmptyBorder(0, 12, 3, 12));
 
-        styleResultLabel(lblResultTitle, 13, Font.BOLD, new Color(180, 180, 220));
+        styleResultLabel(lblResultTitle,  13, Font.BOLD,  new Color(180, 180, 220));
         styleResultLabel(lblPriceCurrent, 12, Font.PLAIN, new Color(160, 160, 200));
         styleResultLabel(lblPricePred,    12, Font.BOLD,  new Color(80, 220, 160));
         styleResultLabel(lblChange,       12, Font.BOLD,  Color.WHITE);
@@ -104,18 +106,67 @@ public class PredictionPanel extends JPanel {
         styleResultLabel(lblConfidence,   12, Font.PLAIN, new Color(160, 160, 200));
 
         result.add(lblResultTitle);
-        result.add(new label("Precio actual:",   new Color(140,140,180))); result.add(lblPriceCurrent);
-        result.add(new label("Precio predicho:", new Color(140,140,180))); result.add(lblPricePred);
+        result.add(new label("Precio actual:",      new Color(140,140,180))); result.add(lblPriceCurrent);
+        result.add(new label("Precio predicho:",    new Color(140,140,180))); result.add(lblPricePred);
         result.add(new label("Variación esperada:", new Color(140,140,180))); result.add(lblChange);
-        result.add(new label("Recomendación:",  new Color(140,140,180))); result.add(lblReco);
-        result.add(new label("Confianza (R²):", new Color(140,140,180))); result.add(lblConfidence);
+        result.add(new label("Recomendación:",      new Color(140,140,180))); result.add(lblReco);
+        result.add(new label("Confianza (R²):",     new Color(140,140,180))); result.add(lblConfidence);
 
-        result.setPreferredSize(new Dimension(400, 200)); 
+        result.setPreferredSize(new Dimension(400, 200));
         add(result, BorderLayout.CENTER);
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Lógica de predicción
+    //  API pública
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Registra la referencia al AgenteUI para poder enviarle mensajes.
+     * Se llama desde AgenteUI después de crear el dashboard.
+     */
+    public void setAgente(AgenteUI agente) {
+        this.agente = agente;
+    }
+
+    /**
+     * Muestra el resultado de predicción recibido desde ForecastResultBehaviour.
+     * Debe llamarse desde el EDT (SwingUtilities.invokeLater).
+     */
+    public void showForecastResult(PredictionResult res) {
+        btnPredict.setEnabled(true);
+        lblLoading.setText(" ");
+        if (res == null) {
+            showMessage("Error al calcular la predicción.", Color.RED);
+            return;
+        }
+        displayResult(res);
+    }
+
+    /**
+     * Muestra el mensaje de datos insuficientes.
+     * Llamado desde ForecastResultBehaviour cuando el predictor no tiene datos.
+     */
+    public void showInsufficientData(int minSamples, int faltantes) {
+        btnPredict.setEnabled(true);
+        lblLoading.setText(" ");
+        showMessage(
+            "<html><center>Datos insuficientes para predecir.<br>"
+            + "Se necesitan al menos <b>" + minSamples + " intervalos</b>.<br>"
+            + "Faltan <b>" + faltantes + "</b> intervalos más.</center></html>",
+            new Color(255, 160, 60));
+    }
+
+    /**
+     * Muestra un mensaje de error genérico.
+     */
+    public void showError(String msg) {
+        btnPredict.setEnabled(true);
+        lblLoading.setText(" ");
+        showMessage(msg, Color.RED);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  Lógica de lanzamiento
     // ─────────────────────────────────────────────────────────────
 
     private void launchPrediction() {
@@ -125,50 +176,22 @@ public class PredictionPanel extends JPanel {
             return;
         }
 
-        int stepsAhead = STEPS[cmbHorizon.getSelectedIndex()];
-        List<Double> prices = MultiCoinDataStore.getInstance().getPrices(coinId);
-
-        // Comprobar datos mínimos antes de lanzar el worker
-        if (prices.size() < PriceForecaster.getMinSamples()) {
-            int missing = PriceForecaster.getMinSamples() - prices.size();
-            showMessage(
-                "<html><center>Datos insuficientes para predecir.<br>"
-                + "Se necesitan al menos <b>" + PriceForecaster.getMinSamples()
-                + " intervalos</b>.<br>"
-                + "Faltan <b>" + missing + "</b> intervalos más.</center></html>",
-                new Color(255, 160, 60));
+        if (agente == null) {
+            showMessage("Agente no disponible aún.", new Color(255, 180, 80));
             return;
         }
 
-        // Bloquear botón mientras se calcula
+        int stepsAhead = STEPS[cmbHorizon.getSelectedIndex()];
+
+        // Bloquear botón mientras se espera respuesta del predictor
         btnPredict.setEnabled(false);
         lblLoading.setText("Calculando...");
         clearResult();
 
-        // Ejecutar en background para no bloquear el EDT
-        SwingWorker<PredictionResult, Void> worker = new SwingWorker<PredictionResult, Void>() {
-            @Override
-            protected PredictionResult doInBackground() {
-                return forecaster.predict(coinId, prices, stepsAhead);
-            }
-
-            @Override
-            protected void done() {
-                btnPredict.setEnabled(true);
-                lblLoading.setText(" ");
-                try {
-                    PredictionResult res = get();
-                    if (res == null) {
-                        showMessage("Error al calcular la predicción.", Color.RED);
-                    } else {
-                        displayResult(res);
-                    }
-                } catch (Exception ex) {
-                    showMessage("Error: " + ex.getMessage(), Color.RED);
-                }
-            }
-        };
-        worker.execute();
+        // Delegar en AgenteUI que enviará el REQUEST al AgentePredictor
+        // La respuesta llegará a ForecastResultBehaviour, que llamará
+        // a showForecastResult() o showInsufficientData() en este panel
+        agente.sendForecastRequest(coinId, stepsAhead);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -176,13 +199,11 @@ public class PredictionPanel extends JPanel {
     // ─────────────────────────────────────────────────────────────
 
     private void displayResult(PredictionResult res) {
-        int steps = res.getStepsAhead();
-        lblResultTitle.setText("Predicción a " + steps + " intervalos:");
+        lblResultTitle.setText("Predicción a " + res.getStepsAhead() + " intervalos:");
 
         lblPriceCurrent.setText(String.format("$ %.4f", res.getCurrentPrice()));
         lblPricePred.setText(String.format("$ %.4f", res.getPredictedPrice()));
 
-        // Variación con color
         double pct = res.getChangePct();
         String sign = pct >= 0 ? "+" : "";
         lblChange.setText(sign + String.format("%.2f%%", pct));
@@ -190,7 +211,6 @@ public class PredictionPanel extends JPanel {
                 ? new Color(60, 220, 100)
                 : pct < 0 ? new Color(240, 80, 80) : Color.WHITE);
 
-        // Recomendación con badge de color
         Action reco = res.getRecommendation();
         lblReco.setText("  " + reco.name() + "  ");
         lblReco.setOpaque(true);
@@ -208,11 +228,8 @@ public class PredictionPanel extends JPanel {
                 lblReco.setForeground(Color.WHITE);
         }
 
-        // Confianza con descripción cualitativa
         double conf = res.getConfidence();
-        String confDesc = conf >= 0.80 ? "Alta"
-                        : conf >= 0.50 ? "Media"
-                        : "Baja";
+        String confDesc = conf >= 0.80 ? "Alta" : conf >= 0.50 ? "Media" : "Baja";
         lblConfidence.setText(String.format("%.1f%%  (%s)", conf * 100, confDesc));
         lblConfidence.setForeground(conf >= 0.80
                 ? new Color(60, 220, 100)
@@ -236,9 +253,7 @@ public class PredictionPanel extends JPanel {
         lblConfidence.setText(" ");
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Utilidades de estilo
-    // ─────────────────────────────────────────────────────────────
+    // ── Utilidades de estilo ─────────────────────────────────────
 
     private void styleResultLabel(JLabel lbl, int size, int style, Color fg) {
         lbl.setFont(new Font("Monospaced", style, size));
@@ -246,7 +261,6 @@ public class PredictionPanel extends JPanel {
         lbl.setBackground(new Color(28, 28, 42));
     }
 
-    /** JLabel inline con texto y color para las etiquetas de fila */
     private static class label extends JLabel {
         label(String text, Color fg) {
             super(text);
@@ -257,4 +271,3 @@ public class PredictionPanel extends JPanel {
         }
     }
 }
- 

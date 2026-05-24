@@ -25,14 +25,9 @@ public class CoinFetcher {
     static {
         SIM_BASE_PRICES.put("bitcoin",      67_000.0);
         SIM_BASE_PRICES.put("ethereum",      3_500.0);
-        SIM_BASE_PRICES.put("binancecoin",     600.0);
         SIM_BASE_PRICES.put("solana",          170.0);
-        SIM_BASE_PRICES.put("ripple",            0.55);
-        SIM_BASE_PRICES.put("cardano",           0.45);
-        SIM_BASE_PRICES.put("avalanche-2",      38.0);
         SIM_BASE_PRICES.put("dogecoin",          0.16);
         SIM_BASE_PRICES.put("polkadot",          8.0);
-        SIM_BASE_PRICES.put("chainlink",        15.0);
     }
 
     private final String symbol;
@@ -51,7 +46,7 @@ public class CoinFetcher {
 
     /**
      * Obtiene el MarketData más reciente para esta moneda.
-     * Intenta la API real primero; si falla usa simulación.
+     * Intenta la API real primero; si falla usa simulación.(Si se satura Coingecko)
      * Nunca bloquea más de 8 s (timeout de conexión).
      */
     public MarketData fetch() {
@@ -66,6 +61,7 @@ public class CoinFetcher {
             if (data != null) {
                 simPrice    = data.getPrice();
                 hasRealPrice = true;
+                System.out.println("[Fetcher/" + symbol + "] Ok.");
                 return data;
             }
         } catch (RateLimitException e) {
@@ -79,7 +75,8 @@ public class CoinFetcher {
 
     // ── API CoinGecko ─────────────────────────────────────────────
 
-    private MarketData fetchFromCoinGecko() throws Exception {
+    @SuppressWarnings("deprecation")
+	private MarketData fetchFromCoinGecko() throws Exception {
         String urlStr = "https://api.coingecko.com/api/v3/simple/price"
                 + "?ids=" + symbol
                 + "&vs_currencies=usd"
@@ -155,7 +152,8 @@ public class CoinFetcher {
 
     public String getSymbol() { return symbol; }
 
-    static class RateLimitException extends Exception {
+    @SuppressWarnings("serial")
+	static class RateLimitException extends Exception {
         RateLimitException() { super("429 Too Many Requests"); }
     }
 }

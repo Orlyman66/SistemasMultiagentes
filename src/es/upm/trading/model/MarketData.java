@@ -3,15 +3,16 @@ package es.upm.trading.model;
 import java.io.Serializable;
 
 /**
- * Objeto que viaja en el cuerpo de los mensajes ACL (REQUEST)
- * desde AgenteAdquisicion → AgentePredictor y AgenteUI.
+ * Objeto que viaja en el cuerpo de los mensajes ACL REQUEST
+ * desde AgenteAdquisicion → AgentePredictor y ACL INFORM 
+ * desde AgenteAdquisicion → AgenteUI.
  * Debe ser Serializable para poder usarse con setContentObject().
  */
 public class MarketData implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private String symbol;        // e.g. "bitcoin", "AAPL"
+    private String symbol;        // e.g. "bitcoin", "ethereum"
     private double price;         // precio actual en USD
     private double priceChange5m; // variación % últimos 5 min
     private double priceChange10m;// variación % últimos 10 min
@@ -19,7 +20,7 @@ public class MarketData implements Serializable {
     private double volume24h;     // volumen 24h en USD
     private long timestamp;       // epoch millis
 
-    public MarketData() {}
+    // public MarketData() {}
 
     public MarketData(String symbol, double price,
                       double priceChange5m, double priceChange10m,
@@ -33,7 +34,7 @@ public class MarketData implements Serializable {
         this.timestamp     = System.currentTimeMillis();
     }
 
-    // ── Getters ──────────────────────────────────────────────
+    // Getters
 
     public String getSymbol()         { return symbol; }
     public double getPrice()          { return price; }
@@ -43,7 +44,7 @@ public class MarketData implements Serializable {
     public double getVolume24h()      { return volume24h; }
     public long   getTimestamp()      { return timestamp; }
 
-    // ── Setters ──────────────────────────────────────────────
+    // Setters
 
     public void setSymbol(String symbol)               { this.symbol = symbol; }
     public void setPrice(double price)                 { this.price = price; }

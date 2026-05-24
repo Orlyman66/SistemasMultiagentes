@@ -1,6 +1,7 @@
 package es.upm.trading.agents;
 
 import es.upm.trading.behaviours.AnalysisBehaviour;
+import es.upm.trading.behaviours.ForecastBehaviour;
 import es.upm.trading.behaviours.TradingStateFSM;
 import es.upm.trading.ml.WekaClassifier;
 import es.upm.trading.utils.Utils;
@@ -56,6 +57,11 @@ public class AgentePredictor extends Agent {
         // ── 3. Comportamiento de análisis (escucha mensajes) ──────
         addBehaviour(new AnalysisBehaviour(this, wekaClassifier, stateFSM));
 
+        // ── 4. Comportamiento de predicción a futuro ──────────────
+        // Escucha REQUEST con ontología "trading-prediction" desde AgenteUI.
+        // Filtro distinto a AnalysisBehaviour para separar ambos flujos.
+        addBehaviour(new ForecastBehaviour(this));
+
         System.out.println("[AgentePredictor] Listo. Esperando datos de mercado.");
     }
 
@@ -66,4 +72,3 @@ public class AgentePredictor extends Agent {
                 stateFSM.getCurrentAction(), stateFSM.getPnl());
     }
 }
-

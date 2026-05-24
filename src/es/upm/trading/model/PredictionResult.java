@@ -11,13 +11,16 @@ import es.upm.trading.model.TradingSignal.Action;
  *  - La variación porcentual esperada
  *  - La recomendación BUY / SELL / HOLD
  *  - El nivel de confianza del modelo (R² de la regresión)
- *  - Los intervalos objetivo solicitados (10, 25 o 50)
  *  - El coinId al que pertenece la predicción
  */
-public class PredictionResult {
+import java.io.Serializable;
+ 
+public class PredictionResult implements Serializable {
+ 
+    private static final long serialVersionUID = 60L;
 
     private final String coinId;
-    private final int    stepsAhead;    // 10, 25 o 50 intervalos
+    private final int    stepsAhead;    // 1, 3 o 5 intervalos
     private final double currentPrice;
     private final double predictedPrice;
     private final double changePct;     // variación % entre actual y predicho
@@ -26,8 +29,8 @@ public class PredictionResult {
     private final long   timestamp;
 
     /** Umbrales para la recomendación (mismo criterio que WekaClassifier) */
-    private static final double BUY_THRESHOLD  =  2.0;
-    private static final double SELL_THRESHOLD = -2.0;
+    private static final double BUY_THRESHOLD  =  0.50;
+    private static final double SELL_THRESHOLD = -0.50;
 
     public PredictionResult(String coinId, int stepsAhead,
                             double currentPrice, double predictedPrice,

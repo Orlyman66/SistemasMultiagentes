@@ -1,9 +1,16 @@
 package es.upm.trading.agents;
 
+import es.upm.trading.behaviours.ForecastResultBehaviour;
+
+import java.util.Map;
+
+import es.upm.trading.behaviours.ForecastBehaviour;
 import es.upm.trading.behaviours.UpdateUIBehaviour;
+import es.upm.trading.model.PredictionRequest;
 import es.upm.trading.ui.DashboardFrame;
 import es.upm.trading.utils.Utils;
 
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
 
@@ -65,8 +72,9 @@ public class AgenteUI extends Agent {
                 if (adquisicion != null) {
                     adquisicion.setActiveCoin(coinId);
                 }
+            	Map<String,String> ALL_COINS=es.upm.trading.utils.Utils.getAllCoins();
                 // Obtener el nombre visible de la moneda seleccionada
-                String displayName = AgenteAdquisicion.ALL_COINS.entrySet().stream()
+                String displayName = ALL_COINS.entrySet().stream()
                         .filter(e -> e.getValue().equals(coinId))
                         .map(java.util.Map.Entry::getKey)
                         .findFirst().orElse(coinId);
@@ -75,7 +83,12 @@ public class AgenteUI extends Agent {
             });
 
             System.out.println("[AgenteUI] Dashboard iniciado.");
+            // Registrar la referencia del agente en el panel de predicción
+            // para que pueda enviar mensajes ACL al AgentePredictor
+            dashboard.getPredictionPanel().setAgente(AgenteUI.this);
             addBehaviour(new UpdateUIBehaviour(AgenteUI.this, dashboard));
+            addBehaviour(new ForecastResultBehaviour(
+                    AgenteUI.this, dashboard.getPredictionPanel()));
         });
 
         System.out.println("[AgenteUI] Esperando mensajes INFORM...");
@@ -88,6 +101,24 @@ public class AgenteUI extends Agent {
             dashboard.dispose();
         }
         System.out.println("[AgenteUI] Agente terminado.");
+    }
+
+    /**
+     * Envía una petición de predicción al AgentePredictor.
+     * Llamado desde PredictionPanel cuando el usuario pulsa el botón.
+     *
+     * @param coinId     moneda a predecir
+     * @param stepsAhead 1, 3 o 5 intervalos
+     */
+    public void sendForecastRequest(String coinId, int stepsAhead) {
+        AID predictor = Utils.findAgent(this, Utils.SERVICE_PREDICTOR);
+        if (predictor == null) {
+            System.err.println("[AgenteUI] AgentePredictor no encontrado en DF.");
+            return;
+        }
+        PredictionRequest req = new PredictionRequest(coinId, stepsAhead);
+        Utils.sendRequest(this, predictor, req, ForecastBehaviour.FORECAST_ONTOLOGY);
+        System.out.println("[AgenteUI] Petición de predicción enviada: " + req);
     }
 }
 

@@ -37,7 +37,7 @@ public class AllCoinsFetchBehaviour extends TickerBehaviour {
     private static final long serialVersionUID = 30L;
 
     /** Intervalo entre rondas de actualización (todas las monedas a la vez) */
-    public static final long INTERVAL = 6_000L;
+    public static final long INTERVAL = 3_000L;
 
     private final List<CoinFetcher> fetchers = new ArrayList<>();
     private final MultiCoinDataStore store   = MultiCoinDataStore.getInstance();

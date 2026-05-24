@@ -7,6 +7,7 @@ import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,71 +22,53 @@ import java.util.Map;
  */
 public class AgenteAdquisicion extends Agent {
 
-    private static final long serialVersionUID = 10L;
+	private static final long serialVersionUID = 10L;
 
-    /** Catálogo de monedas. Mismo orden que CoinSelectorPanel. */
-    public static final Map<String, String> ALL_COINS = new LinkedHashMap<>();
-    static {
-        ALL_COINS.put("Bitcoin",        "bitcoin");
-        ALL_COINS.put("Ethereum",       "ethereum");
-        ALL_COINS.put("BNB",            "binancecoin");
-        ALL_COINS.put("Solana",         "solana");
-        ALL_COINS.put("XRP",            "ripple");
-        ALL_COINS.put("Cardano",        "cardano");
-        ALL_COINS.put("Avalanche",      "avalanche-2");
-        ALL_COINS.put("Dogecoin",       "dogecoin");
-        ALL_COINS.put("Polkadot",       "polkadot");
-        ALL_COINS.put("Chainlink",      "chainlink");
-    }
+	private volatile String moneda = "bitcoin";
+	private AllCoinsFetchBehaviour comportamiento;
 
-    private volatile String activeCoinId = "bitcoin";
-    private AllCoinsFetchBehaviour fetchBehaviour;
+	@Override
+	protected void setup() {
+		es.upm.trading.utils.Utils.generarMonedas();
+		Map<String,String> ALL_COINS=es.upm.trading.utils.Utils.getAllCoins();
+		Object[] listaparametros = getArguments();
+		if (listaparametros != null && listaparametros.length > 0) {
+			moneda = ((String) listaparametros[0]).toLowerCase();
+		}
 
-    @Override
-    protected void setup() {
-        Object[] args = getArguments();
-        if (args != null && args.length > 0) activeCoinId = (String) args[0];
+		System.out.println("[AgenteAdquisicion] Iniciando. Monedas: " + ALL_COINS.size());
 
-        System.out.println("[AgenteAdquisicion] Iniciando. Monedas: " + ALL_COINS.size());
+		// Registro en el DF y en el registro estático para acceso directo desde UI
+		Utils.registerAgentInstance(Utils.SERVICE_MARKET, this);
+		Utils.registerService(this, Utils.SERVICE_MARKET, "Servicio de datos multi-moneda");
 
-        // Registro en el DF y en el registro estático para acceso directo desde UI
-        Utils.registerAgentInstance(Utils.SERVICE_MARKET, this);
-        addBehaviour(new OneShotBehaviour(this) {
-            @Override
-            public void action() {
-                Utils.registerService(myAgent,
-                        Utils.SERVICE_MARKET, "Servicio de datos multi-moneda");
-            }
-        });
+		// Esperar a que UI y Predictor estén registrados en el DF
+		System.out.println("Entrando en espera");
+		doWait(3000);
+		System.out.println("Saliendo de espera");
 
-        // Esperar a que UI y Predictor estén registrados en el DF
-        doWait(3000);
+		List<String> coinIds = new ArrayList<>(ALL_COINS.values());
+		comportamiento= new AllCoinsFetchBehaviour(this, coinIds);
+		addBehaviour(comportamiento);
 
-        // Un único behaviour para todas las monedas → reloj global compartido
-        List<String> coinIds = new ArrayList<>(ALL_COINS.values());
-        fetchBehaviour = new AllCoinsFetchBehaviour(this, coinIds);
-        addBehaviour(fetchBehaviour);
+		System.out.println("[AgenteAdquisicion] AllCoinsFetchBehaviour añadido."
+				+ " Todas las monedas se actualizarán cada "
+				+ AllCoinsFetchBehaviour.INTERVAL / 1000 + "s simultáneamente.");
+	}
 
-        System.out.println("[AgenteAdquisicion] AllCoinsFetchBehaviour añadido."
-                + " Todas las monedas se actualizarán cada "
-                + AllCoinsFetchBehaviour.INTERVAL / 1000 + "s simultáneamente.");
-    }
+	public void setActiveCoin(String coinId) {
+		System.out.println("[AgenteAdquisicion] Activa: " + moneda + " -> " + coinId);
+		moneda = coinId;
+	}
 
-    /**
-     * Cambia la moneda activa que se muestra en la UI.
-     * No detiene nada; el behaviour sigue acumulando datos de todas las monedas.
-     */
-    public void setActiveCoin(String coinId) {
-        System.out.println("[AgenteAdquisicion] Activa: " + activeCoinId + " -> " + coinId);
-        this.activeCoinId = coinId;
-    }
+	public String getActiveCoinId() { 
+		return moneda; 
+	}
 
-    public String getActiveCoinId() { return activeCoinId; }
-
-    @Override
-    protected void takeDown() {
-        if (fetchBehaviour != null) fetchBehaviour.shutdown();
-        Utils.deregisterService(this);
-        System.out.println("[AgenteAdquisicion] Terminado.");
-    }
+	@Override
+	protected void takeDown() {
+		if (comportamiento != null) comportamiento.shutdown();
+		Utils.deregisterService(this);
+		System.out.println("[AgenteAdquisicion] Terminado.");
+	}
 }
