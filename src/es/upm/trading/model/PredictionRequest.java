@@ -3,7 +3,7 @@ package es.upm.trading.model;
 import java.io.Serializable;
 
 /**
- * Objeto que viaja en el mensaje ACL REQUEST de AgenteUI → AgentePredictor
+ * Objeto que viaja en el mensaje ACL REQUEST de AgenteUI -> AgentePredictor
  * para solicitar una predicción de precio futuro.
  *
  * Contiene el coinId de la moneda a predecir y el número de intervalos
@@ -16,18 +16,22 @@ public class PredictionRequest implements Serializable {
     private String coinId;
     private int    stepsAhead;
 
-    public PredictionRequest() {}
-
     public PredictionRequest(String coinId, int stepsAhead) {
         this.coinId     = coinId;
         this.stepsAhead = stepsAhead;
     }
+    
+    
+    //Getters
+    
+    public String getCoinId() { return coinId; }
+    public int getStepsAhead() { return stepsAhead; }
 
-    public String getCoinId()     { return coinId; }
-    public int    getStepsAhead() { return stepsAhead; }
-
-    public void setCoinId(String coinId)         { this.coinId = coinId; }
-    public void setStepsAhead(int stepsAhead)    { this.stepsAhead = stepsAhead; }
+    
+    //Setters
+    
+    public void setCoinId(String coinId) { this.coinId = coinId; }
+    public void setStepsAhead(int stepsAhead) { this.stepsAhead = stepsAhead; }
 
     @Override
     public String toString() {
