@@ -6,18 +6,15 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Almacén central (singleton) que guarda el historial de TradingSignal
+ * Clase singleton que guarda el historial de TradingSignal
  * generadas por AgentePredictor para cada moneda.
  *
- * AnalysisBehaviour escribe aquí cada vez que clasifica un MarketData.
- * DashboardFrame lee las últimas N señales al cambiar de moneda activa.
- *
- * Thread-safety: ConcurrentHashMap + listas sincronizadas, igual que
- * MultiCoinDataStore.
+ * Cada vez que clasifica un MarketData se guarda el resultado aquí.
+ * Se muestran las últimas N señales al cambiar de moneda activa en la UI.
  */
 public class SignalHistoryStore {
 
-    // ── Singleton ────────────────────────────────────────────────
+    // Singleton
     private static final SignalHistoryStore INSTANCE = new SignalHistoryStore();
     public static SignalHistoryStore getInstance() { return INSTANCE; }
     private SignalHistoryStore() {}
@@ -25,12 +22,11 @@ public class SignalHistoryStore {
     /** Máximo de señales guardadas por moneda */
     private static final int MAX_SIGNALS = 200;
 
-    private final ConcurrentHashMap<String, List<TradingSignal>> history =
-            new ConcurrentHashMap<>();
-
-    // ─────────────────────────────────────────────────────────────
-    //  Escritura
-    // ─────────────────────────────────────────────────────────────
+    /**
+     * Listas sincronizadas y ordenadas de las TradinSignals de las monedas.
+     * Se crea la lista la primera vez que llega un dato de esa moneda.
+     */
+    private final ConcurrentHashMap<String, List<TradingSignal>> history = new ConcurrentHashMap<>();
 
     /**
      * Añade una señal al historial de su moneda.
@@ -40,28 +36,24 @@ public class SignalHistoryStore {
      * @param signal  señal generada por el clasificador J48
      */
     public void addSignal(String coinId, TradingSignal signal) {
-        history.computeIfAbsent(coinId,
-                k -> Collections.synchronizedList(new ArrayList<>()));
+        history.computeIfAbsent(coinId, k -> Collections.synchronizedList(new ArrayList<>()));
 
         List<TradingSignal> list = history.get(coinId);
         synchronized (list) {
             list.add(signal);
+            // Si se ha superado el tamaño maximo se elimina la TradingSignal más antigua de esa moneda
             if (list.size() > MAX_SIGNALS) {
                 list.remove(0);
             }
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Lectura
-    // ─────────────────────────────────────────────────────────────
-
     /**
      * Devuelve las últimas N señales de una moneda en orden cronológico
      * inverso (más reciente primero), listo para insertar en la tabla.
      *
      * @param coinId  id de la moneda
-     * @param maxRows número máximo de filas a devolver (e.g. 50)
+     * @param maxRows número máximo de filas a devolver
      * @return lista de señales, vacía si no hay datos aún
      */
     public List<TradingSignal> getLastSignals(String coinId, int maxRows) {
