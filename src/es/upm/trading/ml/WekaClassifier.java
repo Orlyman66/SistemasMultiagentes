@@ -19,22 +19,12 @@ import java.util.Random;
 /**
  * Clasificador de señales de trading usando Weka J48.
  *
- * Implementa el patrón del ejemplo JADE_2024-25_6_Ejemplo_Weka.pdf:
  *  - Construye un dataset ARFF en memoria con ventanas de precios históricas.
  *  - Etiqueta cada muestra como BUY / SELL / HOLD usando reglas simples
- *    (conocimiento del dominio → "ground truth" para entrenamiento).
  *  - Entrena un árbol de decisión J48 y lo usa para clasificar nuevos datos.
  *  - Expone la accuracy del modelo para mostrarla en la UI.
- *
- * Temas del material de clase aplicados:
- *  - Árbol de decisión J48 / información gain (slides3_keynote)
- *  - Preprocesamiento: ventana deslizante como feature engineering (slides2)
- *  - Evaluación: cross-validation 10-fold, accuracy (ML_GII)
- *  - Pipeline KDD: selección → preproceso → minería → evaluación (slides1)
  */
 public class WekaClassifier {
-
-    // ── Configuración ────────────────────────────────────────────
 
     /** Número mínimo de muestras antes de entrenar */
     private static final int MIN_SAMPLES   = 30;
@@ -42,13 +32,12 @@ public class WekaClassifier {
     /** Tamaño del buffer de histórico */
     private static final int BUFFER_SIZE   = 200;
 
-    /** Umbral para etiquetar BUY (%): si precio sube +2% en la siguiente ventana */
+    /** Umbral para etiquetar BUY (%): si precio sube +N% en la siguiente ventana */
     private static final double BUY_THRESHOLD  =  0.50;
 
-    /** Umbral para etiquetar SELL (%): si precio baja -2% */
+    /** Umbral para etiquetar SELL (%): si precio baja -N% */
     private static final double SELL_THRESHOLD = -0.50;
 
-    // ── Estado interno ───────────────────────────────────────────
 
     private J48 classifier;
     private Instances dataset;
@@ -63,20 +52,16 @@ public class WekaClassifier {
         buildDatasetStructure();
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Definición del dataset ARFF en memoria
-    // ─────────────────────────────────────────────────────────────
-
     /**
      * Construye la estructura del dataset (equivale a la cabecera .arff).
      * Features:
-     *   - price         : precio actual
-     *   - change5m      : variación % últimos 5 min
-     *   - change10m     : variación % últimos 10 min
-     *   - change30m     : variación % últimos 30 min
-     *   - volume_norm   : volumen 24h normalizado (log10)
+     *   - price: precio actual
+     *   - change5m: variación % últimos 5 min
+     *   - change10m: variación % últimos 10 min
+     *   - change30m: variación % últimos 30 min
+     *   - volume_norm: volumen 24h normalizado (log10)
      * Clase:
-     *   - signal        : {BUY, SELL, HOLD}
+     *   - signal: {BUY, SELL, HOLD}
      */
     private void buildDatasetStructure() {
         attributes = new ArrayList<>();
@@ -96,18 +81,11 @@ public class WekaClassifier {
         dataset.setClassIndex(dataset.numAttributes() - 1);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Actualización del buffer y dataset
-    // ─────────────────────────────────────────────────────────────
 
     /**
      * Añade un nuevo MarketData al buffer y genera una instancia etiquetada
      * para el dataset de entrenamiento usando las reglas de dominio.
-     *
-     * Preprocesamiento aplicado (slides2):
-     *  - Normalización del volumen con log10 para reducir escala
-     *  - Manejo de valores extremos (outliers) por capping implícito
-     *
+     * 
      * @param data  muestra recibida del AgenteAdquisicion
      */
     public void addSample(MarketData data) {
@@ -131,11 +109,10 @@ public class WekaClassifier {
     }
 
     /**
-     * Regla de etiquetado heurística (ground truth para entrenamiento).
-     * Basada en la propuesta del enunciado:
-     *   Si Δ30m >  BUY_THRESHOLD  → BUY
-     *   Si Δ30m < SELL_THRESHOLD  → SELL
-     *   En caso contrario          → HOLD
+     * Regla de etiquetado heurística.
+     *   Si Δ30m >  BUY_THRESHOLD  -> BUY
+     *   Si Δ30m < SELL_THRESHOLD  -> SELL
+     *   En caso contrario  -> HOLD
      *
      * También considera Δ10m para refinar la señal en escenarios intermedios.
      */
@@ -154,8 +131,6 @@ public class WekaClassifier {
 
     /**
      * Construye una instancia Weka a partir de un MarketData.
-     * Feature engineering:
-     *   - volume_norm = log10(volume24h + 1)  para comprimir la escala
      */
     private Instance buildInstance(MarketData data, String label) {
         Instance inst = new DenseInstance(attributes.size());
@@ -173,13 +148,9 @@ public class WekaClassifier {
         return inst;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Entrenamiento
-    // ─────────────────────────────────────────────────────────────
 
     /**
-     * Entrena (o re-entrena) el árbol de decisión J48 con el dataset actual.
-     * Aplica validación cruzada de 10 folds para obtener la accuracy (slides3, ML_GII).
+     * Entrena el árbol de decisión J48 con el dataset actual.
      * Se llama automáticamente cuando hay suficientes muestras.
      */
     public void trainModel() {
@@ -190,17 +161,16 @@ public class WekaClassifier {
         }
 
         try {
-            // J48 con poda activada (parámetro por defecto, evita overfitting — slides3)
+            // J48 con poda activada
             classifier = new J48();
             classifier.setUnpruned(false);
 
-            // Copia del dataset para cross-validation sin sesgo
             Instances trainData = new Instances(dataset);
 
             // Entrenamiento sobre todos los datos disponibles
             classifier.buildClassifier(trainData);
 
-            // Evaluación con cross-validation de 10 folds (ML_GII)
+            // Evaluación con cross-validation
             J48 evalClassifier = new J48();
             evalClassifier.setUnpruned(false);
             Evaluation eval = new Evaluation(trainData);
@@ -212,9 +182,8 @@ public class WekaClassifier {
             System.out.println("[Weka] Modelo J48 entrenado.");
             System.out.println("[Weka] Árbol:\n" + classifier.toString());
             System.out.printf("[Weka] Accuracy (CV-10): %.1f%% | Instancias: %d%n",
-                    eval.pctCorrect(), trainData.numInstances());
-            System.out.println("[Weka] Matriz de confusión:\n"
-                    + eval.toMatrixString());
+            		eval.pctCorrect(), trainData.numInstances());
+            System.out.println("[Weka] Matriz de confusión:\n" + eval.toMatrixString());
 
         } catch (Exception e) {
             System.err.println("[Weka] ERROR al entrenar: " + e.getMessage());
@@ -222,9 +191,6 @@ public class WekaClassifier {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    //  Clasificación (inferencia)
-    // ─────────────────────────────────────────────────────────────
 
     /**
      * Clasifica un nuevo MarketData y devuelve la señal de trading.
@@ -234,7 +200,7 @@ public class WekaClassifier {
      * @return TradingSignal con acción BUY/SELL/HOLD y confianza
      */
     public TradingSignal classify(MarketData data) {
-        // Añadir al histórico y re-entrenar si toca
+        // Añadir al histórico y re-entrenar si es necesario
         addSample(data);
         if (!isTrained || buffer.size() % 10 == 0) {
             trainModel();
@@ -247,7 +213,7 @@ public class WekaClassifier {
             try {
                 // Crear instancia sin etiqueta para clasificar
                 Instance instance = buildInstance(data, null);
-                // Instancia temporal con estructura correcta
+                // Instancia temporal
                 Instances tempDataset = new Instances(dataset, 0);
                 tempDataset.add(instance);
                 tempDataset.setClassIndex(tempDataset.numAttributes() - 1);
@@ -272,8 +238,7 @@ public class WekaClassifier {
             justification = buildJustification(data, heuristic, false);
         }
 
-        return new TradingSignal(action, data.getSymbol(), data.getPrice(),
-                lastAccuracy, justification);
+        return new TradingSignal(action, data.getSymbol(), data.getPrice(), lastAccuracy, justification);
     }
 
     /**
@@ -294,10 +259,9 @@ public class WekaClassifier {
         }
     }
 
-    // ── Getters de estado ────────────────────────────────────────
+    // Getters
 
-    public boolean isTrained()      { return isTrained; }
-    public double  getLastAccuracy(){ return lastAccuracy; }
-    public int     getSampleCount() { return buffer.size(); }
-    public int     getMinSamples()  { return MIN_SAMPLES; }
-}
+    public boolean isTrained() { return isTrained; }
+    public double getLastAccuracy() { return lastAccuracy; }
+    public int getSampleCount() { return buffer.size(); }
+    public int getMinSamples() { return MIN_SAMPLES; }
