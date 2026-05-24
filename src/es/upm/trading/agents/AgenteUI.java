@@ -14,7 +14,7 @@ import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
 
-/**
+/*
  * Agente de visualización / interfaz de usuario.
  *
  * Responsabilidades:
