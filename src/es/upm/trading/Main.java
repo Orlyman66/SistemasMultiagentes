@@ -14,7 +14,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
 
         String symbol = "bitcoin";
-        System.out.println("=== Sistema Multiagéntico de Trading — Iniciando. ===");
+        System.out.println("=== Sistema Multiagentes de Trading — Iniciando. ===");
 
         // Crear el runtime JADE
         Runtime rt = Runtime.instance();
@@ -57,9 +57,9 @@ public class Main {
         adquisicionAgent.start();
 
         System.out.println("=== Sistema multiagente iniciado. ===");
-        System.out.println("    AgenteUI         → recibe INFORM (precios + señales)");
-        System.out.println("    AgentePredictor  → recibe REQUEST (MarketData) → J48");
-        System.out.println("    AgenteAdquisicion→ TickerBehaviour cada 30s");
+        System.out.println("    AgenteUI          -> recibe INFORM (precios + señales + predicciones)");
+        System.out.println("    AgentePredictor   -> recibe REQUEST (MarketData) -> J48, (PredictionRequest) -> PriceForecaster");
+        System.out.println("    AgenteAdquisicion -> TickerBehaviour cada 30s");
         System.out.println("    GUI de JADE activado.");
     }
 }
