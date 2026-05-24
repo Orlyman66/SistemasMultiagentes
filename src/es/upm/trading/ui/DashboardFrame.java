@@ -19,13 +19,11 @@ import java.util.function.Consumer;
 /*
  * Ventana principal del sistema de trading.
  *
- * Paneles: | HEADER: símbolo + precio actual + señal │
- *   ├─────────────┬───────────────────────────────┤
- *   │  GRÁFICA    │  TABLA DE SEÑALES             │
- *   │  de precios │  (scroll)                     │
- *   ├─────────────┴───────────────────────────────┤
- *   │  BARRA DE ESTADO: muestras / accuracy       │
- *   └─────────────────────────────────────────────┘
+ * Paneles: | HEADER: símbolo + precio actual + señal 						      |
+ * 			| Criptomonedas  |  Gráfica treal  |  Tabla	  |  Predicción de precio | 
+ * 			|								     señales                          |
+ * 			| BARRA DE ESTADO: muestras / accuracy (último tick)                  |
+ *  
  * - JFrame, JPanel, JTable, JLabel, BorderLayout (ejemplo Clase)
  * - Integración con agente mediante hilo MainGUI (ejemplo Weka)
  */
@@ -365,12 +363,9 @@ public class DashboardFrame extends JFrame {
     /* Actualiza el label de estado con info del clasificador */
     public void updateModelStats(int samples, int minSamples, double accuracy) {
         if (samples < minSamples) {
-            lblStatus.setText(String.format(
-                    "Recolectando muestras: %d/%d para entrenar J48...", samples, minSamples));
+            lblStatus.setText(String.format("Recolectando muestras: %d/%d para entrenar J48...", samples, minSamples));
         } else {
-            lblStatus.setText(String.format(
-                    "Modelo J48 activo | Muestras: %d | Accuracy CV-10: %.1f%%",
-                    samples, accuracy * 100));
+            lblStatus.setText(String.format("Modelo J48 activo | Muestras: %d | Accuracy CV-10: %.1f%%", samples, accuracy * 100));
         }
     }
 }

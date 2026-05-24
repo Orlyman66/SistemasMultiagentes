@@ -6,7 +6,7 @@ import jade.core.Runtime;
 import jade.wrapper.AgentContainer;
 import jade.wrapper.AgentController;
 
-/**
+/*
  * Clase principal que lanza la plataforma JADE y los tres agentes del sistema.
  */
 public class Main {

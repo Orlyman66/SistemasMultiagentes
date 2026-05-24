@@ -26,49 +26,46 @@ import jade.core.behaviours.OneShotBehaviour;
  *   - Filtro de mensajes en modo bloqueante (MessageTemplate en AnalysisBehaviour)
  *   - Registro en DF y búsqueda de otros agentes
  */
+@SuppressWarnings("serial")
 public class AgentePredictor extends Agent {
 
-    private static final long serialVersionUID = 11L;
+	private WekaClassifier  wekaClassifier;
+	private TradingStateFSM stateFSM;
 
-    private WekaClassifier  wekaClassifier;
-    private TradingStateFSM stateFSM;
+	private void iniciarPredictor() {
+		wekaClassifier = new WekaClassifier();
+		stateFSM = new TradingStateFSM(this);
+	}
 
-    @Override
-    protected void setup() {
-        System.out.println("[AgentePredictor] Iniciando...");
+	@Override
+	protected void setup() {
+		System.out.println("[AgentePredictor] Iniciando...");
+		
+		iniciarPredictor();
+		
+		addBehaviour(new OneShotBehaviour(this) {
+			@Override
+			public void action() {
+				Utils.registerService(myAgent,Utils.SERVICE_PREDICTOR, "Clasificador J48 de señales de trading");
+			}
+		});
 
-        // ── Inicializar subsistemas ───────────────────────────────
-        wekaClassifier = new WekaClassifier();
-        stateFSM       = new TradingStateFSM(this);
+		addBehaviour(stateFSM);
+		
+		AnalysisBehaviour comportamientoAnalisis= new AnalysisBehaviour(this, wekaClassifier, stateFSM);
+		addBehaviour(comportamientoAnalisis);
 
-        // ── 1. Registro en el DF (OneShotBehaviour) ──────────────
-        addBehaviour(new OneShotBehaviour(this) {
-            @Override
-            public void action() {
-                Utils.registerService(myAgent,
-                        Utils.SERVICE_PREDICTOR,
-                        "Clasificador J48 de señales de trading");
-            }
-        });
+		// ── Comportamiento de predicción a futuro ──────────────
+		// Escucha REQUEST con ontología "trading-prediction" desde AgenteUI.
+		// Filtro distinto a AnalysisBehaviour para separar ambos flujos.
+		addBehaviour(new ForecastBehaviour(this));
 
-        // ── 2. Máquina de estados FSM ─────────────────────────────
-        addBehaviour(stateFSM);
+		System.out.println("[AgentePredictor] Listo. Esperando datos de mercado.");
+	}
 
-        // ── 3. Comportamiento de análisis (escucha mensajes) ──────
-        addBehaviour(new AnalysisBehaviour(this, wekaClassifier, stateFSM));
-
-        // ── 4. Comportamiento de predicción a futuro ──────────────
-        // Escucha REQUEST con ontología "trading-prediction" desde AgenteUI.
-        // Filtro distinto a AnalysisBehaviour para separar ambos flujos.
-        addBehaviour(new ForecastBehaviour(this));
-
-        System.out.println("[AgentePredictor] Listo. Esperando datos de mercado.");
-    }
-
-    @Override
-    protected void takeDown() {
-        Utils.deregisterService(this);
-        System.out.printf("[AgentePredictor] Terminado. Estado final: %s | P&L: %.2f%%%n",
-                stateFSM.getCurrentAction(), stateFSM.getPnl());
-    }
+	@Override
+	protected void takeDown() {
+		Utils.deregisterService(this);
+		System.out.printf("[AgentePredictor] Terminado. Estado final: %s | P&L: %.2f%%%n",stateFSM.getCurrentAction(), stateFSM.getPnl());
+	}
 }

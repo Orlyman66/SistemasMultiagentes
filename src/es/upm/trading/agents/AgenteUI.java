@@ -33,92 +33,106 @@ import jade.core.behaviours.OneShotBehaviour;
  *   - Comportamientos JADE
  *   - Consumo de servicios vía DF
  */
+@SuppressWarnings("serial")
 public class AgenteUI extends Agent {
 
-    private static final long serialVersionUID = 12L;
+	private DashboardFrame dashboard;
+	private String moneda = "bitcoin";
 
-    private DashboardFrame dashboard;
-    private String symbol = "bitcoin";
+	private void leerParametros() {
+		Object[] args = getArguments();
+		if (args != null && args.length > 0) {
+			moneda = ((String) args[0]).toLowerCase();
+		}
+	}
 
-    @Override
-    protected void setup() {
-        System.out.println("[AgenteUI] Iniciando...");
+	private void registrarUI() {
+		addBehaviour(new OneShotBehaviour(this) {
+			public void action() {
+				Utils.registerService(myAgent,Utils.SERVICE_UI, "Dashboard de visualización de trading");
+			}
+		});
+	}
 
-        Object[] args = getArguments();
-        if (args != null && args.length > 0) {
-            symbol = (String) args[0];
-        }
+	private String obtenerNombreMoneda(String monedaId) {
+		String nombre = monedaId;
+		Map<String, String> MONEDAS= es.upm.trading.utils.Utils.getAllCoins();
 
-        // ── 1. Registro en el DF (OneShotBehaviour) ──────────────
-        addBehaviour(new OneShotBehaviour(this) {
-            @Override
-            public void action() {
-                Utils.registerService(myAgent,
-                        Utils.SERVICE_UI,
-                        "Dashboard de visualización de trading");
-            }
-        });
+		for (Map.Entry<String, String> entrada : MONEDAS.entrySet()) {
+			if (entrada.getValue().equals(monedaId)) {
+				nombre = entrada.getKey();
+				break;
+			}
+		}
+		return nombre;
+	}
 
-        // ── 2. Lanzar interfaz Swing en hilo independiente ────────
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            dashboard = new DashboardFrame(symbol);
+	private void cambiarMoneda(String monedaId) {
+		AgenteAdquisicion adquisicion = (AgenteAdquisicion) Utils.findAgentObject(AgenteUI.this, Utils.SERVICE_MARKET);
 
-            // Cuando el usuario selecciona una moneda en el panel lateral:
-            //  1. Decirle al AgenteAdquisicion cuál es la activa (para filtrar INFORMs)
-            //  2. Cargar la serie histórica del store en la gráfica
-            dashboard.setOnCoinSelected(coinId -> {
-                AgenteAdquisicion adquisicion = (AgenteAdquisicion)
-                        Utils.findAgentObject(AgenteUI.this, Utils.SERVICE_MARKET);
-                if (adquisicion != null) {
-                    adquisicion.setActiveCoin(coinId);
-                }
-            	Map<String,String> ALL_COINS=es.upm.trading.utils.Utils.getAllCoins();
-                // Obtener el nombre visible de la moneda seleccionada
-                String displayName = ALL_COINS.entrySet().stream()
-                        .filter(e -> e.getValue().equals(coinId))
-                        .map(java.util.Map.Entry::getKey)
-                        .findFirst().orElse(coinId);
-                // Cargar el histórico completo ya acumulado en el store
-                dashboard.switchToCoin(coinId, displayName);
-            });
+		if (adquisicion != null)
+			adquisicion.setActiveCoin(monedaId);
 
-            System.out.println("[AgenteUI] Dashboard iniciado.");
-            // Registrar la referencia del agente en el panel de predicción
-            // para que pueda enviar mensajes ACL al AgentePredictor
-            dashboard.getPredictionPanel().setAgente(AgenteUI.this);
-            addBehaviour(new UpdateUIBehaviour(AgenteUI.this, dashboard));
-            addBehaviour(new ForecastResultBehaviour(
-                    AgenteUI.this, dashboard.getPredictionPanel()));
-        });
+		String nombreMoneda = obtenerNombreMoneda(monedaId);
+		dashboard.switchToCoin(monedaId, nombreMoneda);
+	}
 
-        System.out.println("[AgenteUI] Esperando mensajes INFORM...");
-    }
+	private void crearUI() {
+		javax.swing.SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				dashboard = new DashboardFrame(moneda);
 
-    @Override
-    protected void takeDown() {
-        Utils.deregisterService(this);
-        if (dashboard != null) {
-            dashboard.dispose();
-        }
-        System.out.println("[AgenteUI] Agente terminado.");
-    }
+				dashboard.setOnCoinSelected(monedaId -> cambiarMoneda(monedaId));
 
-    /**
-     * Envía una petición de predicción al AgentePredictor.
-     * Llamado desde PredictionPanel cuando el usuario pulsa el botón.
-     *
-     * @param coinId     moneda a predecir
-     * @param stepsAhead 1, 3 o 5 intervalos
-     */
-    public void sendForecastRequest(String coinId, int stepsAhead) {
-        AID predictor = Utils.findAgent(this, Utils.SERVICE_PREDICTOR);
-        if (predictor == null) {
-            System.err.println("[AgenteUI] AgentePredictor no encontrado en DF.");
-            return;
-        }
-        PredictionRequest req = new PredictionRequest(coinId, stepsAhead);
-        Utils.sendRequest(this, predictor, req, ForecastBehaviour.FORECAST_ONTOLOGY);
-        System.out.println("[AgenteUI] Petición de predicción enviada: " + req);
-    }
+				System.out.println("[AgenteUI] Dashboard iniciado.");
+
+				dashboard.getPredictionPanel().setAgente(AgenteUI.this);
+
+				UpdateUIBehaviour comportamientoUI = new UpdateUIBehaviour(AgenteUI.this, dashboard);
+				addBehaviour(comportamientoUI);
+
+				ForecastResultBehaviour comportamientoResultado = new ForecastResultBehaviour(AgenteUI.this, dashboard.getPredictionPanel());
+				addBehaviour(comportamientoResultado);
+			}
+		});
+	}
+
+	@Override
+	protected void setup() {
+		System.out.println("[AgenteUI] Iniciando...");
+
+		leerParametros();
+		registrarUI(); // 1. Registro en el DF (OneShotBehaviour)
+		crearUI(); // 2. Lanzar interfaz Swing en hilo independiente (EDT)
+
+		System.out.println("[AgenteUI] Esperando mensajes INFORM...");
+	}
+
+	@Override
+	protected void takeDown() {
+		Utils.deregisterService(this);
+		if (dashboard != null) {
+			dashboard.dispose();
+		}
+		System.out.println("[AgenteUI] Agente terminado.");
+	}
+
+	/*
+	 * Envía una petición de predicción al AgentePredictor.
+	 * Llamado desde PredictionPanel cuando el usuario pulsa el botón.
+	 *
+	 * @param coinId     moneda a predecir
+	 * @param stepsAhead 1, 3 o 5 intervalos
+	 */
+	public void sendForecastRequest(String coinId, int stepsAhead) {
+		AID predictor = Utils.findAgent(this, Utils.SERVICE_PREDICTOR);
+		if (predictor == null) {
+			System.err.println("[AgenteUI] AgentePredictor no encontrado en DF.");
+			return;
+		}
+		PredictionRequest req = new PredictionRequest(coinId, stepsAhead);
+		Utils.sendRequest(this, predictor, req, ForecastBehaviour.FORECAST_ONTOLOGY);
+		System.out.println("[AgenteUI] Petición de predicción enviada: " + req);
+	}
 }
 
