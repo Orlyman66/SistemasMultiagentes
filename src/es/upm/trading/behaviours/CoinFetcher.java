@@ -11,7 +11,7 @@ import java.util.Map;
 
 /*
  * Encapsula el estado y la lógica de obtención de datos para UNA moneda.
- * No es un behaviour — es una clase auxiliar usada por AllCoinsFetchBehaviour.
+ * Clase auxiliar usada por AllCoinsFetchBehaviour.
  *
  * Cada instancia mantiene:
  *   - El precio de simulación propio de la moneda (simPrice)
@@ -23,20 +23,20 @@ public class CoinFetcher {
 	// Precios de referencia para simulación 
 	private static final Map<String, Double> SIM_BASE_PRICES = new HashMap<>();
 	static {
-		SIM_BASE_PRICES.put("bitcoin",      67_000.0);
-		SIM_BASE_PRICES.put("ethereum",      3_500.0);
-		SIM_BASE_PRICES.put("solana",          170.0);
-		SIM_BASE_PRICES.put("dogecoin",          0.16);
-		SIM_BASE_PRICES.put("polkadot",          8.0);
+		SIM_BASE_PRICES.put("bitcoin", 67_000.0);
+		SIM_BASE_PRICES.put("ethereum", 3_500.0);
+		SIM_BASE_PRICES.put("solana", 170.0);
+		SIM_BASE_PRICES.put("dogecoin", 0.16);
+		SIM_BASE_PRICES.put("polkadot", 8.0);
 	}
 
 	private final String symbol;
-	private double  simPrice;
+	private double simPrice;
 	private boolean hasRealPrice  = false;
-	private long    rateLimitUntil = 0L;
+	private long rateLimitUntil = 0L;
 
 	public CoinFetcher(String symbol) {
-		this.symbol   = symbol;
+		this.symbol = symbol;
 		this.simPrice = SIM_BASE_PRICES.getOrDefault(symbol, 100.0);
 	}
 
@@ -57,7 +57,7 @@ public class CoinFetcher {
 		try {
 			MarketData data = fetchFromCoinGecko();
 			if (data != null) {
-				simPrice    = data.getPrice();
+				simPrice = data.getPrice();
 				hasRealPrice = true;
 				System.out.println("[Fetcher/" + symbol + "] Ok.");
 				return data;
@@ -94,10 +94,10 @@ public class CoinFetcher {
 		if (status != 200) { conn.disconnect(); throw new Exception("HTTP " + status); }
 
 		StringBuilder sb = new StringBuilder();
-		try (BufferedReader reader = new BufferedReader(
-				new InputStreamReader(conn.getInputStream()))) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
 			String line;
-			while ((line = reader.readLine()) != null) sb.append(line);
+			while ((line = reader.readLine()) != null) 
+				sb.append(line);
 		}
 		conn.disconnect();
 		return parse(sb.toString());
@@ -105,7 +105,8 @@ public class CoinFetcher {
 
 	private MarketData parse(String json) {
 		try {
-			if (json.equals("{}") || !json.contains("\"usd\":")) return null;
+			if (json.equals("{}") || !json.contains("\"usd\":")) 
+				return null;
 
 			double price = extractDouble(json, "\"usd\":");
 			double vol24h = extractDouble(json, "\"usd_24h_vol\":");
@@ -129,10 +130,11 @@ public class CoinFetcher {
 		int idx = json.indexOf(key);
 		if (idx < 0) throw new RuntimeException("Key not found: " + key);
 		int start = idx + key.length();
-		while (start < json.length() && json.charAt(start) == ' ') start++;
+		while (start < json.length() && json.charAt(start) == ' ') 
+			start++;
 		int end = start;
-		while (end < json.length() && (Character.isDigit(json.charAt(end))
-				|| json.charAt(end) == '.' || json.charAt(end) == '-')) end++;
+		while (end < json.length() && (Character.isDigit(json.charAt(end))|| json.charAt(end) == '.' || json.charAt(end) == '-')) 
+			end++;
 		return Double.parseDouble(json.substring(start, end));
 	}
 
