@@ -265,3 +265,4 @@ public class WekaClassifier {
     public double getLastAccuracy() { return lastAccuracy; }
     public int getSampleCount() { return buffer.size(); }
     public int getMinSamples() { return MIN_SAMPLES; }
+}
