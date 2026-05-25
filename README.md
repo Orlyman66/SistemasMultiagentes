@@ -3,10 +3,11 @@ Instrucciones de instalación
 - Captura de dependencias necesarias para instalar el proyecto
 - Instrucciones de ejecución:
   1. Desde la aplicación seleccionar *<> Code* y descargar el zip o realizar un git clone del HTTPS.
-  2. Crear el proyecto de java / carpeta con el mismo nombre SistemasMultiagentes.
-  3. Click derecho sobre la carpeta > import > General > File System, next y ahora buscas el directorio donde te has descargado la carpeta donde se encuentre SistemasMultiagentes y lo seleccionas.
-  4. Seleccionas todos los recursos actuales y finalizar
-  5. Seleccionar a Yes to All
+  2. Desde Eclipse, crear el proyecto de java / carpeta con el nombre SistemasMultiagentes.
+  3. Hacer click derecho sobre la carpeta y seleccionar la opción de import.
+  4. Seleccionar General > File System, pulsar next buscar el directorio donde se ha descargado y descomprimido el proyecto, y seleccionarlo.
+  5. Seleccionar todos los recursos actuales y finalizar.
+  6. Seleccionar "Yes to All".
   
 <img width="488" height="215" alt="imagen" src="https://github.com/user-attachments/assets/c535f32a-2fd2-4113-b708-da5f318ced3b" />
 <img width="488" height="200" alt="imagen" src="https://github.com/user-attachments/assets/d9b4e0e2-1f91-431b-b1ed-639cbde1a3d7" />
