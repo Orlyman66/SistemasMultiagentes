@@ -26,11 +26,6 @@ import java.util.concurrent.Future;
  *       · Guarda cada MarketData en MultiCoinDataStore.
  *       · Envía INFORM al AgenteUI.
  *       · Envía REQUEST al AgentePredictor.
- *
- * El paralelismo se hace en hilos del pool (no en el hilo de JADE), por lo
- * que JADE sigue siendo capaz de procesar mensajes durante las llamadas HTTP.
- * Las llamadas a send() se hacen de vuelta en el hilo de JADE (dentro de
- * onTick()) para respetar el modelo de concurrencia de JADE.
  */
 
 public class AllCoinsFetchBehaviour extends TickerBehaviour {
@@ -45,7 +40,6 @@ public class AllCoinsFetchBehaviour extends TickerBehaviour {
 
 	/*
 	 * Pool de hilos para las llamadas HTTP paralelas.
-	 * Se usan hilos del pool, no el hilo de JADE, para no bloquear la plataforma.
 	 * Tamaño = número de monedas para máximo paralelismo.
 	 */
 	
@@ -67,9 +61,7 @@ public class AllCoinsFetchBehaviour extends TickerBehaviour {
 				+ fetchers.size() + " monedas en paralelo ===");
 		
 		/*
-		 * 1. Lanzar todas las llamadas HTTP en paralelo
-		 * Cada Future representa la tarea de fetch de una moneda.
-		 * Las llamadas HTTP se hacen en hilos del pool, no en el hilo de JADE.
+		 * Lanzar todas las llamadas HTTP en paralelo
 		 */
 		List<Future<MarketData>> futures = new ArrayList<>();
 		for (CoinFetcher fetcher : fetchers) {
@@ -77,13 +69,9 @@ public class AllCoinsFetchBehaviour extends TickerBehaviour {
 		}
 
 		/* 
-		 * 2. Recoger resultados y procesar 
-		 * get() espera a que cada tarea termine. Como estamos en onTick()
-		 * (hilo de JADE), esperamos aquí pero las llamadas HTTP ya están
-		 * corriendo en paralelo, por lo que el tiempo total es el de la
-		 * llamada más lenta, no la suma de todas.
+		 * Recoger resultados y procesar 
 		 */
-		AID uiAgent        = Utils.findAgent(myAgent, Utils.SERVICE_UI);
+		AID uiAgent = Utils.findAgent(myAgent, Utils.SERVICE_UI);
 		AID predictorAgent = Utils.findAgent(myAgent, Utils.SERVICE_PREDICTOR);
 
 		for (int i = 0; i < fetchers.size(); i++) {
@@ -117,7 +105,7 @@ public class AllCoinsFetchBehaviour extends TickerBehaviour {
 	}
 
 	/*
-	 * Liberar el pool de hilos cuando el agente termina.
+	 * Liberar los hilos cuando el agente termina.
 	 * Llamado desde AgenteAdquisicion.takeDown().
 	 */
 	public void shutdown() {
