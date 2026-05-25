@@ -50,14 +50,14 @@ public class AnalysisBehaviour extends CyclicBehaviour {
     public void action() {
         // Recepción bloqueante con filtro 
         // El comportamiento se bloquea hasta que llegue un REQUEST con la ontología correcta.
-        // Ningún otro comportamiento se ve afectado (block() solo afecta a ESTE behaviour).
+        // Solo se bloquea este comportamiento.
         ACLMessage msg = myAgent.receive(MT);
 
         if (msg != null) {
             System.out.println("[Predictor] Mensaje recibido de: "
                     + msg.getSender().getLocalName());
             try {
-                // Deserializar el objeto MarketData del cuerpo del mensaje
+                // Obtener el objeto MarketData del cuerpo del mensaje
                 MarketData data = (MarketData) msg.getContentObject();
                 System.out.println("[Predictor] Datos: " + data);
 
@@ -66,7 +66,7 @@ public class AnalysisBehaviour extends CyclicBehaviour {
                 System.out.println("[Predictor] Señal generada: " + signal);
 
                 // Guardar en historial por moneda 
-                // Usamos el símbolo del MarketData original como coinId
+                // Se usa el identificador de la moneda del MarketData
                 // para asociar la señal a la moneda correcta en el store
                 SignalHistoryStore.getInstance().addSignal(data.getSymbol(), signal);
 
