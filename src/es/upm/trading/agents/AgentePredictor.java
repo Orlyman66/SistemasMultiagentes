@@ -42,7 +42,8 @@ public class AgentePredictor extends Agent {
 		System.out.println("[AgentePredictor] Iniciando...");
 		
 		iniciarPredictor();
-		
+
+		//Registrarse en el DF
 	    Utils.registerService(this,Utils.SERVICE_PREDICTOR, "Clasificador J48 de señales de trading");
 			
 
