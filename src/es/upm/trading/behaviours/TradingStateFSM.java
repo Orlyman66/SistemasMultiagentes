@@ -8,7 +8,7 @@ import jade.core.Agent;
 import jade.core.behaviours.FSMBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 
-/**
+/*
  * Máquina de estados finitos (FSMBehaviour) para el estado de trading.
  *
  * Estados:
@@ -16,26 +16,22 @@ import jade.core.behaviours.OneShotBehaviour;
  *
  * Cada transición se dispara cuando el clasificador Weka emite una señal nueva.
  * En estado BUY/SELL se registra el precio de entrada para calcular P&L.
- *
- * Temas de clase:
- *   - FSMBehaviour (PDF2, diapositiva 58-59)
- *   - registerFirstState, registerLastState, registerTransition
  */
 public class TradingStateFSM extends FSMBehaviour {
 
     private static final long serialVersionUID = 4L;
 
-    // ── Identificadores de estado ────────────────────────────────
+    // Identificadores de estado 
     public static final String STATE_HOLD = "HOLD";
     public static final String STATE_BUY  = "BUY";
     public static final String STATE_SELL = "SELL";
 
-    // ── Códigos de transición ────────────────────────────────────
+    // Códigos de transición 
     private static final int TO_HOLD = 0;
     private static final int TO_BUY  = 1;
     private static final int TO_SELL = 2;
 
-    // ── Estado compartido entre sub-comportamientos ──────────────
+    // Estado compartido entre sub-comportamientos 
     private volatile TradingSignal pendingSignal;
     private volatile Action        currentAction = Action.HOLD;
     private volatile double        entryPrice    = 0.0;
@@ -46,13 +42,11 @@ public class TradingStateFSM extends FSMBehaviour {
         buildFSM();
     }
 
-    // ─────────────────────────────────────────────────────────────
     //  Construcción de la FSM
-    // ─────────────────────────────────────────────────────────────
 
     private void buildFSM() {
 
-        // ── Estado HOLD ──────────────────────────────────────────
+        // Estado HOLD 
         registerFirstState(new OneShotBehaviour(myAgent) {
             private int result = TO_HOLD;
             @Override
@@ -70,7 +64,7 @@ public class TradingStateFSM extends FSMBehaviour {
             @Override public int onEnd() { return result; }
         }, STATE_HOLD);
 
-        // ── Estado BUY ───────────────────────────────────────────
+        // Estado BUY 
         registerState(new OneShotBehaviour(myAgent) {
             private int result = TO_HOLD;
             @Override
@@ -92,7 +86,7 @@ public class TradingStateFSM extends FSMBehaviour {
                         double trade = (closingPrice - entryPrice) / entryPrice * 100.0;
                         pnl += trade;
                         System.out.printf("[FSM] Posición cerrada: entrada=%.2f salida=%.2f trade=%.2f%% P&L=%.2f%%%n",
-                                entryPrice, closingPrice, trade, pnl);
+                                		  entryPrice, closingPrice, trade, pnl);
                         result = TO_SELL;
                         break;
                     case HOLD: result = TO_HOLD; break;
@@ -104,7 +98,7 @@ public class TradingStateFSM extends FSMBehaviour {
             @Override public int onEnd() { return result; }
         }, STATE_BUY);
 
-        // ── Estado SELL ──────────────────────────────────────────
+        // Estado SELL 
         registerState(new OneShotBehaviour(myAgent) {
             private int result = TO_HOLD;
             @Override
@@ -128,7 +122,7 @@ public class TradingStateFSM extends FSMBehaviour {
             @Override public int onEnd() { return result; }
         }, STATE_SELL);
 
-        // ── Transiciones ─────────────────────────────────────────
+        // Transiciones 
         // Desde HOLD
         registerTransition(STATE_HOLD, STATE_HOLD, TO_HOLD);
         registerTransition(STATE_HOLD, STATE_BUY,  TO_BUY);
@@ -143,17 +137,15 @@ public class TradingStateFSM extends FSMBehaviour {
         registerTransition(STATE_SELL, STATE_BUY,  TO_BUY);
     }
 
-    // ─────────────────────────────────────────────────────────────
     //  API pública
-    // ─────────────────────────────────────────────────────────────
-
-    /**
+    
+    /*
      * Alimenta la FSM con una nueva señal del clasificador.
      * Llamado desde AnalysisBehaviour.
      */
     public void processSignal(TradingSignal signal) {
         this.pendingSignal = signal;
-        restart(); // desbloquear la FSM para que procese el nuevo estado
+        restart(); // Desbloquear la FSM para que procese el nuevo estado
     }
 
     public Action  getCurrentAction() { return currentAction; }

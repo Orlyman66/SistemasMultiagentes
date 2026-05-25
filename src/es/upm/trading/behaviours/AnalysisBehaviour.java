@@ -12,7 +12,7 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
-/**
+/*
  * Comportamiento principal del AgentePredictor.
  *
  * Ciclo:
@@ -21,23 +21,16 @@ import jade.lang.acl.MessageTemplate;
  *   2. Clasifica los datos con el árbol J48 de WekaClassifier.
  *   3. Pasa la señal a la FSM para actualizar el estado de la cartera.
  *   4. Envía el TradingSignal como INFORM al AgenteUI.
- *
- * Temas de clase:
- *   - CyclicBehaviour (PDF2, diap. 39–41)
- *   - Filtro de mensajes con MessageTemplate (PDF3) — REQUISITO del enunciado
- *   - blockingReceive en modo bloqueante (PDF3) — REQUISITO del enunciado
- *   - Envío de respuesta INFORM (PDF3)
  */
 public class AnalysisBehaviour extends CyclicBehaviour {
 
     private static final long serialVersionUID = 5L;
 
-    /**
+    /*
      * Filtro de mensajes:
      *   - Performativa REQUEST
      *   - Ontología "trading-system"
      * Solo se leerán mensajes que cumplan AMBAS condiciones.
-     * Patrón directo del ejemplo de clase (PDF3, MessageTemplate.and).
      */
     private static final MessageTemplate MT = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
@@ -55,7 +48,7 @@ public class AnalysisBehaviour extends CyclicBehaviour {
 
     @Override
     public void action() {
-        // ── Recepción bloqueante con filtro ──────────────────────
+        // Recepción bloqueante con filtro 
         // El comportamiento se bloquea hasta que llegue un REQUEST con la ontología correcta.
         // Ningún otro comportamiento se ve afectado (block() solo afecta a ESTE behaviour).
         ACLMessage msg = myAgent.receive(MT);
@@ -68,19 +61,19 @@ public class AnalysisBehaviour extends CyclicBehaviour {
                 MarketData data = (MarketData) msg.getContentObject();
                 System.out.println("[Predictor] Datos: " + data);
 
-                // ── Clasificar con Weka J48 ──────────────────────
+                // Clasificar con Weka J48 
                 TradingSignal signal = weka.classify(data);
                 System.out.println("[Predictor] Señal generada: " + signal);
 
-                // ── Guardar en historial por moneda ──────────────
+                // Guardar en historial por moneda 
                 // Usamos el símbolo del MarketData original como coinId
                 // para asociar la señal a la moneda correcta en el store
                 SignalHistoryStore.getInstance().addSignal(data.getSymbol(), signal);
 
-                // ── Actualizar FSM ───────────────────────────────
+                // Actualizar FSM 
                 fsm.processSignal(signal);
 
-                // ── Enviar señal al AgenteUI como INFORM ─────────
+                // Enviar señal al AgenteUI como INFORM 
                 AID uiAgent = Utils.findAgent(myAgent, Utils.SERVICE_UI);
                 if (uiAgent != null) {
                     Utils.sendInform(myAgent, uiAgent, signal);
@@ -94,7 +87,6 @@ public class AnalysisBehaviour extends CyclicBehaviour {
             }
         } else {
             // Ningún mensaje disponible: bloquear el behaviour
-            // (equivalente al patrón receive() + block() del PDF3)
             block();
         }
     }

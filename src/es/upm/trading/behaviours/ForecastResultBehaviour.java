@@ -10,7 +10,7 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
-/**
+/*
  * Comportamiento del AgenteUI que recibe la respuesta de predicción
  * enviada por AgentePredictor (ForecastBehaviour) y actualiza la UI.
  *
@@ -21,16 +21,12 @@ import jade.lang.acl.MessageTemplate;
  *      - PredictionRequest con stepsAhead=-1 → datos insuficientes
  *   3. Actualiza PredictionPanel en el EDT de Swing.
  *   4. Reactiva el botón de predicción.
- *
- * Temas de clase:
- *   - CyclicBehaviour con MessageTemplate y filtro bloqueante (PDF2, PDF3)
- *   - SwingUtilities.invokeLater para actualizar UI desde agente (PDF5)
  */
 public class ForecastResultBehaviour extends CyclicBehaviour {
 
     private static final long serialVersionUID = 52L;
 
-    /** Filtro: INFORM + ontología trading-prediction */
+    // Filtro: INFORM + ontología trading-prediction 
     private static final MessageTemplate MT = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
             MessageTemplate.MatchOntology(ForecastBehaviour.FORECAST_ONTOLOGY)
@@ -60,14 +56,14 @@ public class ForecastResultBehaviour extends CyclicBehaviour {
                     });
 
                 } else if (content instanceof PredictionRequest) {
+                	
                     // stepsAhead == -1 → datos insuficientes
                     PredictionRequest nack = (PredictionRequest) content;
-                    final int missing = PriceForecaster.getMinSamples()
-                            - nack.getStepsAhead(); // stepsAhead = -1 aquí
+                    final int missing = PriceForecaster.getMinSamples() - nack.getStepsAhead(); // stepsAhead = -1 aquí
+                    
                     // Calcular cuántos faltan usando el store directamente
                     final String coinId = nack.getCoinId();
-                    int current = es.upm.trading.model.MultiCoinDataStore
-                            .getInstance().getPointCount(coinId);
+                    int current = es.upm.trading.model.MultiCoinDataStore.getInstance().getPointCount(coinId);
                     final int faltantes = PriceForecaster.getMinSamples() - current;
 
                     javax.swing.SwingUtilities.invokeLater(() -> {
