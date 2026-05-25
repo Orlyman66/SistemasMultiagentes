@@ -40,11 +40,11 @@ En caso de que aparezca error por no haber importado correctamente las librería
 <img width="800" height="300" alt="imagen" src="https://github.com/user-attachments/assets/ee617b3e-caf6-4c8d-85fc-fb3242f16d4b" />
 <img width="800" height="419" alt="imagen" src="https://github.com/user-attachments/assets/696a9d5c-55df-46dd-9bca-aab3431f65bb" />
 
-
 ## Datos de Ejemplo
 No se tienen datos de ejemplo debido a que se descargan periódicamente desde la API Externa CoinGecko en tiempo real.
 
 ## Diagrama arquitectónico
+<img width="1600" height="1262" alt="image" src="https://github.com/user-attachments/assets/2d10d929-f0e4-42de-be9c-4e46e172cfeb" />
 
 ## Declaración de IA
 En este trabajo se ha utilizado IA principalmente para agilizar la escritura de código debido al escaso tiempo y gran carga de trabajo que teníamos en el grupo respecto a otras asignaturas.
