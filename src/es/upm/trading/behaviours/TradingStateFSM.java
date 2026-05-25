@@ -15,7 +15,7 @@ import jade.core.behaviours.OneShotBehaviour;
  *   HOLD ←→ BUY  ←→ SELL
  *
  * Cada transición se dispara cuando el clasificador Weka emite una señal nueva.
- * En estado BUY/SELL se registra el precio de entrada para calcular P&L.
+ * En estado BUY/SELL se registra el precio de entrada para calcular beneficios y pérdidas.
  */
 public class TradingStateFSM extends FSMBehaviour {
 
@@ -23,19 +23,19 @@ public class TradingStateFSM extends FSMBehaviour {
 
     // Identificadores de estado 
     public static final String STATE_HOLD = "HOLD";
-    public static final String STATE_BUY  = "BUY";
+    public static final String STATE_BUY = "BUY";
     public static final String STATE_SELL = "SELL";
 
     // Códigos de transición 
     private static final int TO_HOLD = 0;
-    private static final int TO_BUY  = 1;
+    private static final int TO_BUY = 1;
     private static final int TO_SELL = 2;
 
     // Estado compartido entre sub-comportamientos 
     private volatile TradingSignal pendingSignal;
-    private volatile Action        currentAction = Action.HOLD;
-    private volatile double        entryPrice    = 0.0;
-    private volatile double        pnl           = 0.0;  // P&L acumulado
+    private volatile Action currentAction = Action.HOLD;
+    private volatile double entryPrice = 0.0;
+    private volatile double pnl = 0.0;  // beneficios y perdidas acumuladas
 
     public TradingStateFSM(Agent agent) {
         super(agent);
@@ -70,8 +70,7 @@ public class TradingStateFSM extends FSMBehaviour {
             @Override
             public void action() {
                 if (pendingSignal == null) { result = TO_BUY; return; }
-                System.out.println("[FSM] Estado BUY — señal: " + pendingSignal.getAction()
-                        + " @ " + pendingSignal.getPrice());
+                System.out.println("[FSM] Estado BUY — señal: " + pendingSignal.getAction() + " @ " + pendingSignal.getPrice());
 
                 // Registrar precio de entrada si venimos de HOLD
                 if (currentAction != Action.BUY) {
@@ -81,12 +80,11 @@ public class TradingStateFSM extends FSMBehaviour {
 
                 switch (pendingSignal.getAction()) {
                     case SELL:
-                        // Cerrar posición: calcular P&L
+                        // Cerrar posición: calcular beneficio y pérdida
                         double closingPrice = pendingSignal.getPrice();
                         double trade = (closingPrice - entryPrice) / entryPrice * 100.0;
                         pnl += trade;
-                        System.out.printf("[FSM] Posición cerrada: entrada=%.2f salida=%.2f trade=%.2f%% P&L=%.2f%%%n",
-                                		  entryPrice, closingPrice, trade, pnl);
+                        System.out.printf("[FSM] Posición cerrada: entrada=%.2f salida=%.2f trade=%.2f%% P&L=%.2f%%%n", entryPrice, closingPrice, trade, pnl);
                         result = TO_SELL;
                         break;
                     case HOLD: result = TO_HOLD; break;
@@ -136,8 +134,6 @@ public class TradingStateFSM extends FSMBehaviour {
         registerTransition(STATE_SELL, STATE_HOLD, TO_HOLD);
         registerTransition(STATE_SELL, STATE_BUY,  TO_BUY);
     }
-
-    //  API pública
     
     /*
      * Alimenta la FSM con una nueva señal del clasificador.
@@ -149,6 +145,6 @@ public class TradingStateFSM extends FSMBehaviour {
     }
 
     public Action  getCurrentAction() { return currentAction; }
-    public double  getPnl()           { return pnl; }
-    public double  getEntryPrice()    { return entryPrice; }
+    public double  getPnl() { return pnl; }
+    public double  getEntryPrice() { return entryPrice; }
 }
