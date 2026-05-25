@@ -3,7 +3,6 @@ package es.upm.trading.ui;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-//import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -11,11 +10,8 @@ import java.util.function.Consumer;
 /*
  * Panel lateral con el listado predefinido de criptomonedas.
  *
- * Se muestra para cada moneda cuántos cambios se han acumulado desde el inicio,
- * actualizándose en tiempo real conforme llegan ticks de AgenteAdquisicion.
- *
- * Al seleccionar una moneda, el onCoinSelected notifica a AgenteUI
- * para que cambie la moneda activa y se cargue su serie histórica en la interfaz.
+ * 1. Se muestra para cada moneda cuántos cambios se han acumulado desde el inicio, actualizándose en tiempo real conforme llegan ticks de AgenteAdquisicion.
+ * 2. Al seleccionar una moneda, el onCoinSelected notifica a AgenteUI para que cambie la moneda activa y se cargue su serie histórica en la interfaz.
  */
 @SuppressWarnings("serial")
 public class CoinSelectorPanel extends JPanel {
@@ -50,9 +46,10 @@ public class CoinSelectorPanel extends JPanel {
 		setBackground(new Color(22, 22, 36));
 
 		listModel = new DefaultListModel<>();
-		for(String name:MONEDAS.keySet()) listModel.addElement(name);
-		//MONEDAS.keySet().forEach(listModel::addElement);
-
+		for(String name:MONEDAS.keySet()) {
+			listModel.addElement(name);
+		}
+		
 		coinList = new JList<>(listModel);
 		coinList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		coinList.setFont(new Font("SansSerif", Font.PLAIN, 13));
@@ -97,7 +94,7 @@ public class CoinSelectorPanel extends JPanel {
 		add(bottom, BorderLayout.SOUTH);
 	}
 
-	// ── Lógica de selección ──────────────────────────────────────
+	// Lógica de selección
 
 	private void handleSelection() {
 		String selectedName = coinList.getSelectedValue();
@@ -116,7 +113,7 @@ public class CoinSelectorPanel extends JPanel {
 		onCoinSelected.accept(coinId);
 	}
 
-	// ── API pública ──────────────────────────────────────────────
+	// API pública
 
 	public void updatePointCount(String coinId, int count) {
 		pointCounts.put(coinId, count);
@@ -127,10 +124,6 @@ public class CoinSelectorPanel extends JPanel {
 		this.activeCoinId = coinId;
 		es.upm.trading.utils.Utils.generarMonedas();
 		MONEDAS= es.upm.trading.utils.Utils.getAllCoins();
-		//		        MONEDAS.entrySet().stream()
-		//		                .filter(e -> e.getValue().equals(coinId))
-		//		                .findFirst()
-		//		                .ifPresent(e -> lblActive.setText("Mostrando: " + e.getKey()));
 		for(Map.Entry<String, String> entrada: MONEDAS.entrySet()) {
 			if(entrada.getValue().equals(coinId)) {
 				lblActive.setText("Mostrando: " + entrada.getKey());
@@ -143,11 +136,6 @@ public class CoinSelectorPanel extends JPanel {
 	public String getActiveName() {
 		es.upm.trading.utils.Utils.generarMonedas();
 		MONEDAS= es.upm.trading.utils.Utils.getAllCoins();
-		//
-		//		        return MONEDAS.entrySet().stream()
-		//		                .filter(e -> e.getValue().equals(activeCoinId))
-		//		                .map(Map.Entry::getKey)
-		//		                .findFirst().orElse(activeCoinId);
 
 		for(Map.Entry<String, String> entrada: MONEDAS.entrySet()) {
 			if(entrada.getValue().equals(activeCoinId)) {
@@ -157,7 +145,7 @@ public class CoinSelectorPanel extends JPanel {
 		return activeCoinId;
 	}
 
-	// ── Render ─────────────────────────────────────────────────
+	// Render
 
 	private DefaultListCellRenderer buildCellRenderer() {
 		return new DefaultListCellRenderer() {
