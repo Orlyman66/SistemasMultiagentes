@@ -22,16 +22,6 @@ import jade.core.behaviours.OneShotBehaviour;
  *   2. Lanzar el JFrame Swing (DashboardFrame) en un hilo independiente.
  *   3. Escuchar mensajes INFORM con MarketData y TradingSignal (UpdateUIBehaviour).
  *   4. Delegar las actualizaciones de UI al EDT de Swing.
- *
- * Temas de clase:
- *   - Integración Swing con JADE: lanzar JFrame en hilo separado (PDF5, Ejemplo Weka)
- *   - OneShotBehaviour para registro en DF
- *   - CyclicBehaviour con MessageTemplate INFORM (UpdateUIBehaviour)
- *
- * Requisitos del enunciado cubiertos:
- *   - Agente de visualización con interfaz de usuario
- *   - Comportamientos JADE
- *   - Consumo de servicios vía DF
  */
 @SuppressWarnings("serial")
 public class AgenteUI extends Agent {
