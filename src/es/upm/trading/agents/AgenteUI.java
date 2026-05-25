@@ -47,11 +47,7 @@ public class AgenteUI extends Agent {
 	}
 
 	private void registrarUI() {
-		addBehaviour(new OneShotBehaviour(this) {
-			public void action() {
-				Utils.registerService(myAgent,Utils.SERVICE_UI, "Dashboard de visualización de trading");
-			}
-		});
+	     Utils.registerService(this,Utils.SERVICE_UI, "Dashboard de visualización de trading");
 	}
 
 	private String obtenerNombreMoneda(String monedaId) {
