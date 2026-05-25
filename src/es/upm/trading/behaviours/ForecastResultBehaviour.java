@@ -18,7 +18,7 @@ import jade.lang.acl.MessageTemplate;
  *   1. Espera bloqueante de mensajes INFORM con ontología "trading-prediction".
  *   2. Deserializa el contenido:
  *      - PredictionResult → predicción calculada, mostrar en el panel
- *      - PredictionRequest con stepsAhead=-1 → datos insuficientes
+ *      - PredictionRequest con stepsAhead=-1 -> datos insuficientes
  *   3. Actualiza PredictionPanel en el EDT de Swing.
  *   4. Reactiva el botón de predicción.
  */
@@ -57,7 +57,7 @@ public class ForecastResultBehaviour extends CyclicBehaviour {
 
                 } else if (content instanceof PredictionRequest) {
                 	
-                    // stepsAhead == -1 → datos insuficientes
+                    // stepsAhead == -1 -> datos insuficientes
                     PredictionRequest nack = (PredictionRequest) content;
                     final int missing = PriceForecaster.getMinSamples() - nack.getStepsAhead(); // stepsAhead = -1 aquí
                     
@@ -67,15 +67,13 @@ public class ForecastResultBehaviour extends CyclicBehaviour {
                     final int faltantes = PriceForecaster.getMinSamples() - current;
 
                     javax.swing.SwingUtilities.invokeLater(() -> {
-                        predictionPanel.showInsufficientData(
-                                PriceForecaster.getMinSamples(), faltantes);
+                        predictionPanel.showInsufficientData(PriceForecaster.getMinSamples(), faltantes);
                     });
                 }
 
             } catch (Exception e) {
                 System.err.println("[ForecastResultBehaviour] ERROR: " + e.getMessage());
-                javax.swing.SwingUtilities.invokeLater(() ->
-                        predictionPanel.showError("Error al recibir predicción."));
+                javax.swing.SwingUtilities.invokeLater(() -> predictionPanel.showError("Error al recibir predicción."));
             }
         } else {
             block();
