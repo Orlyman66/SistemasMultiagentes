@@ -19,12 +19,6 @@ import jade.core.behaviours.OneShotBehaviour;
  *   3. Escuchar mensajes REQUEST con MarketData (AnalysisBehaviour).
  *   4. Clasificar los datos con J48 y emitir TradingSignal como INFORM.
  *   5. Mantener el estado actual de trading (BUY/SELL/HOLD) en la FSM.
- *
- * Requisitos del enunciado cubiertos:
- *   - Agente con capacidad de cálculo complejo / inteligente (árbol J48 + CV)
- *   - Comportamientos JADE: OneShotBehaviour + CyclicBehaviour + FSMBehaviour
- *   - Filtro de mensajes en modo bloqueante (MessageTemplate en AnalysisBehaviour)
- *   - Registro en DF y búsqueda de otros agentes
  */
 @SuppressWarnings("serial")
 public class AgentePredictor extends Agent {
