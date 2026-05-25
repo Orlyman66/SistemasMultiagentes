@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-/**
+/*
  * Panel lateral con el listado predefinido de criptomonedas.
  *
  * Se muestra para cada moneda cuántos cambios se han acumulado desde el inicio,

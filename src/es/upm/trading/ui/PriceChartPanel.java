@@ -6,15 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*
- * Panel que dibuja una gráfica de precios en tiempo real usando paintComponent.
- *
- * No necesita librerías externas: dibuja directamente sobre un JPanel con Graphics2D.
- * La gráfica coloreará el área bajo la curva en verde si el precio sube y en rojo si baja.
- *
- * Temas de clase:
- * - JPanel con paintComponent (Swing)
- * - Programación orientada a eventos: repaint() disparado desde el EDT
- */
+ * Panel personalizado para pintar la gráfica de precios en tiempo real usando paintComponent y Graphics2D sin usar librerías externas.
+*/
 public class PriceChartPanel extends JPanel {
 
 	private static final long serialVersionUID = 8L;
@@ -39,21 +32,14 @@ public class PriceChartPanel extends JPanel {
 				new Color(150, 150, 200)));
 	}
 
-	/* Limpia todos los puntos de la gráfica (al cambiar de moneda). */
-	public void clear() {
+	public void clear() { // Limpia todos los puntos de la gráfica (al cambiar de moneda).
 		prices.clear();
 		changes.clear();
 		repaint();
 	}
 
 	/*
-	 * Carga de golpe una serie histórica completa (al cambiar de moneda).
-	 * Sustituye todos los puntos actuales por los de la nueva serie.
-	 * Se usa cuando el usuario selecciona una moneda que ya tiene puntos
-	 * acumulados en MultiCoinDataStore desde el arranque.
-	 *
-	 * @param historicPrices  lista de precios en orden cronológico
-	 * @param historicChanges lista de Δ30m en orden cronológico (mismo tamaño)
+	 * Método para cargar los precios guardados cuando se cambia de criptomoneda
 	 */
 	public void loadSeries(java.util.List<Double> historicPrices,
 			java.util.List<Double> historicChanges) {
@@ -101,7 +87,7 @@ public class PriceChartPanel extends JPanel {
 		double maxP = prices.stream().mapToDouble(Double::doubleValue).max().orElse(1);
 		double range = (maxP - minP) == 0 ? 1 : (maxP - minP);
 
-		// ── Eje Y ────────────────────────────────────────────────
+		// Eje Y
 		g2.setColor(new Color(80, 80, 100));
 		g2.drawLine(PADDING_LEFT, PADDING_TOP, PADDING_LEFT, PADDING_TOP + h);
 		g2.drawLine(PADDING_LEFT, PADDING_TOP + h, PADDING_LEFT + w, PADDING_TOP + h);
@@ -116,7 +102,7 @@ public class PriceChartPanel extends JPanel {
 			g2.drawString(String.format("%.0f", val), 4, yPos + 4);
 		}
 
-		// ── Área rellena bajo la curva ───────────────────────────
+		// Área rellena bajo la curva
 		int n = prices.size();
 		int[] xPts = new int[n + 2];
 		int[] yPts = new int[n + 2];
@@ -138,7 +124,7 @@ public class PriceChartPanel extends JPanel {
 		g2.setColor(areaColor);
 		g2.fillPolygon(xPts, yPts, n + 2);
 
-		// ── Línea de precio ──────────────────────────────────────
+		// Línea de precio
 		Color lineColor = lastChange >= 0 ? new Color(80, 220, 130) : new Color(240, 80, 80);
 		g2.setColor(lineColor);
 		g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
@@ -146,7 +132,7 @@ public class PriceChartPanel extends JPanel {
 			g2.drawLine(xPts[i], yPts[i], xPts[i + 1], yPts[i + 1]);
 		}
 
-		// ── Punto actual (último precio) ─────────────────────────
+		// Punto actual (último precio)
 		int lastX = xPts[n - 1];
 		int lastY = yPts[n - 1];
 		g2.setColor(Color.WHITE);

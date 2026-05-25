@@ -1,7 +1,6 @@
 package es.upm.trading.ui;
 
 import es.upm.trading.agents.AgenteUI;
-import es.upm.trading.ml.PriceForecaster;
 import es.upm.trading.model.PredictionResult;
 import es.upm.trading.model.TradingSignal.Action;
 
@@ -9,20 +8,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.function.Supplier;
 
-/**
- * Panel de predicción de precio futuro.
- *
- * Cuando el usuario pulsa "Predecir", este panel NO calcula nada localmente.
- * En su lugar delega en AgenteUI, que envía un mensaje ACL REQUEST al
- * AgentePredictor (ontología "trading-prediction"). El resultado llega de
- * vuelta como INFORM y es procesado por ForecastResultBehaviour, que llama
- * a showForecastResult() o showInsufficientData() en este panel.
- *
+/* Panel de la interfaz que solicita y muestra las predicciones calculadas por el AgentePredictor predicción del precio futuro basado en los datos previos (necesarios 20 datos iniciales)
+ * Cuando usuario pulsa "Predecir", este panel NO calcula nada localmente.
  * Flujo de mensajes:
- *   PredictionPanel → AgenteUI.sendForecastRequest()
- *     → [REQUEST trading-prediction] → AgentePredictor (ForecastBehaviour)
- *     → [INFORM  trading-prediction] → AgenteUI (ForecastResultBehaviour)
- *     → PredictionPanel.showForecastResult()
+ *   PredictionPanel → AgenteUI.sendForecastRequest() → [REQUEST trading-prediction] → AgentePredictor (ForecastBehaviour)→ [INFORM  trading-prediction] → AgenteUI (ForecastResultBehaviour)→ PredictionPanel.showForecastResult()
  */
 public class PredictionPanel extends JPanel {
 
@@ -30,7 +19,7 @@ public class PredictionPanel extends JPanel {
 
 	private static final int[] STEPS = {1, 3, 5};
 
-	// ── Componentes ──────────────────────────────────────────────
+	// Componentes
 	private final JComboBox<String> cmbHorizon;
 	private final JButton           btnPredict;
 
@@ -62,7 +51,7 @@ public class PredictionPanel extends JPanel {
 		setBackground(new Color(22, 22, 36));
 		setPreferredSize(new Dimension(400, 210));
 
-		// ── Fila de controles ────────────────────────────────────
+		// Fila de controles 
 		cmbHorizon = new JComboBox<>(new String[]{
 				"Próxima variación (1)",
 				"Próximas 3 variaciones",
@@ -93,7 +82,7 @@ public class PredictionPanel extends JPanel {
 
 		add(controls, BorderLayout.NORTH);
 
-		// ── Panel de resultado ───────────────────────────────────
+		// Panel de resultado 
 		JPanel result = new JPanel(new GridLayout(0, 1, 6, 4));
 		result.setBackground(new Color(28, 28, 42));
 		result.setBorder(BorderFactory.createEmptyBorder(0, 12, 3, 12));
@@ -263,7 +252,7 @@ public class PredictionPanel extends JPanel {
 		lblConfidence.setText(" ");
 	}
 
-	// ── Utilidades de estilo ─────────────────────────────────────
+	// Utilidades de estilo
 
 	private void styleResultLabel(JLabel lbl, int size, int style, Color fg) {
 		lbl.setFont(new Font("Monospaced", style, size));
