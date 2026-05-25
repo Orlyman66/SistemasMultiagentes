@@ -43,12 +43,8 @@ public class AgentePredictor extends Agent {
 		
 		iniciarPredictor();
 		
-		addBehaviour(new OneShotBehaviour(this) {
-			@Override
-			public void action() {
-				Utils.registerService(myAgent,Utils.SERVICE_PREDICTOR, "Clasificador J48 de señales de trading");
-			}
-		});
+	    Utils.registerService(this,Utils.SERVICE_PREDICTOR, "Clasificador J48 de señales de trading");
+			
 
 		addBehaviour(stateFSM);
 		
