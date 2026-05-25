@@ -14,9 +14,9 @@ import java.util.Map;
  * Clase auxiliar usada por AllCoinsFetchBehaviour.
  *
  * Cada instancia mantiene:
- *   - El precio de simulación propio de la moneda (simPrice)
- *   - El timestamp del rate limit si CoinGecko devuelve 429
- *   - Si ya se obtuvo al menos un precio real de la API
+ *   -El precio de simulación propio de la moneda (simPrice)
+ *   -El timestamp del rate limit si CoinGecko devuelve 429
+ *   -Si ya se obtuvo al menos un precio real de la API
  */
 public class CoinFetcher {
 
@@ -40,7 +40,7 @@ public class CoinFetcher {
 		this.simPrice = SIM_BASE_PRICES.getOrDefault(symbol, 100.0);
 	}
 
-	//  Obtención de datos (llamada desde AllCoinsFetchBehaviour)
+	// Obtención de datos (llamada desde AllCoinsFetchBehaviour)
 
 	/*
 	 * Obtiene el MarketData más reciente para esta moneda.

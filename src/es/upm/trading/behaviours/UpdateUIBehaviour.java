@@ -17,9 +17,8 @@ import jade.lang.acl.MessageTemplate;
  * actualiza el dashboard Swing en el Event Dispatch Thread (EDT).
  *
  * Para MarketData:
- *   - Siempre actualiza el contador de puntos del panel lateral.
- *   - Solo actualiza el precio del header y la gráfica si la moneda recibida
- *     es la que está activa en la UI (evita que Dogecoin sobreescriba Bitcoin).
+ *   -Siempre actualiza el contador de puntos del panel lateral.
+ *   -Solo actualiza el precio del header y la gráfica si la moneda recibida es la que está activa en la UI (evita que Dogecoin sobreescriba Bitcoin).
  *
  * Para TradingSignal:
  *   - Solo muestra señales de la moneda activa.

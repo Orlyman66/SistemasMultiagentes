@@ -28,9 +28,9 @@ public class AnalysisBehaviour extends CyclicBehaviour {
 
     /*
      * Filtro de mensajes:
-     *   - Performativa REQUEST
-     *   - Ontología "trading-system"
-     * Solo se leerán mensajes que cumplan AMBAS condiciones.
+     * -Performativa REQUEST
+     * -Ontología "trading-system"
+     * Solo se leerán mensajes que cumplan ambas condiciones.
      */
     private static final MessageTemplate MT = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
@@ -48,6 +48,7 @@ public class AnalysisBehaviour extends CyclicBehaviour {
 
     @Override
     public void action() {
+
         // Recepción bloqueante con filtro 
         // El comportamiento se bloquea hasta que llegue un REQUEST con la ontología correcta.
         // Solo se bloquea este comportamiento.
@@ -57,6 +58,7 @@ public class AnalysisBehaviour extends CyclicBehaviour {
             System.out.println("[Predictor] Mensaje recibido de: "
                     + msg.getSender().getLocalName());
             try {
+                
                 // Obtener el objeto MarketData del cuerpo del mensaje
                 MarketData data = (MarketData) msg.getContentObject();
                 System.out.println("[Predictor] Datos: " + data);

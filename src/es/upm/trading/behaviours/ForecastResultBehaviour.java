@@ -11,14 +11,13 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 /*
- * Comportamiento del AgenteUI que recibe la respuesta de predicción
- * enviada por AgentePredictor (ForecastBehaviour) y actualiza la UI.
+ * Comportamiento del AgenteUI que recibe la respuesta de predicción enviada por AgentePredictor (ForecastBehaviour) y actualiza la UI.
  *
  * Ciclo:
  *   1. Espera bloqueante de mensajes INFORM con ontología "trading-prediction".
  *   2. Deserializa el contenido:
- *      - PredictionResult → predicción calculada, mostrar en el panel
- *      - PredictionRequest con stepsAhead=-1 -> datos insuficientes
+ *      -PredictionResult -> predicción calculada, mostrar en el panel
+ *      -PredictionRequest con stepsAhead = -1 -> datos insuficientes
  *   3. Actualiza PredictionPanel en el EDT de Swing.
  *   4. Reactiva el botón de predicción.
  */

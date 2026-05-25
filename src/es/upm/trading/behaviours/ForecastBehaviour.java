@@ -86,7 +86,7 @@ public class ForecastBehaviour extends CyclicBehaviour {
                 if (result != null) {
                     reply.setContentObject((Serializable) result);
                 } else {
-                    // Enviar PredictionRequest con stepsAhead=-1 como señal
+                    // Enviar PredictionRequest con stepsAhead = -1 como señal
                     // de datos insuficientes
                     PredictionRequest nack = new PredictionRequest(req.getCoinId(), -1);
                     reply.setContentObject(nack);

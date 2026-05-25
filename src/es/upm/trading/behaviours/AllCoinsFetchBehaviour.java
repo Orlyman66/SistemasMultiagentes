@@ -19,13 +19,12 @@ import java.util.concurrent.Future;
  * en cada tick, garantizando que todas se actualicen al mismo tiempo.
  *
  * Funcionamiento:
- *   - Un solo TickerBehaviour con periodo INTERVAL (reloj global compartido).
- *   - En cada tick lanza las llamadas HTTP a la API en paralelo usando un
- *     ExecutorService, sin bloquear el hilo de JADE.
- *   - Cuando todas las llamadas terminan, procesa los resultados:
- *       · Guarda cada MarketData en MultiCoinDataStore.
- *       · Envía INFORM al AgenteUI.
- *       · Envía REQUEST al AgentePredictor.
+ *   -Un solo TickerBehaviour con periodo INTERVAL (reloj global compartido).
+ *   -En cada tick lanza las llamadas HTTP a la API en paralelo usando un ExecutorService, sin bloquear el hilo de JADE.
+ *   -Cuando todas las llamadas terminan, procesa los resultados:
+ *    --Guarda cada MarketData en MultiCoinDataStore.
+ *    --Envía INFORM al AgenteUI.
+ *    --Envía REQUEST al AgentePredictor.
  */
 
 public class AllCoinsFetchBehaviour extends TickerBehaviour {
@@ -60,24 +59,20 @@ public class AllCoinsFetchBehaviour extends TickerBehaviour {
 		System.out.println("[AllCoinsFetch] === Tick — actualizando "
 				+ fetchers.size() + " monedas en paralelo ===");
 		
-		/*
-		 * Lanzar todas las llamadas HTTP en paralelo
-		 */
+		// Lanzar todas las llamadas HTTP en paralelo 
 		List<Future<MarketData>> futures = new ArrayList<>();
 		for (CoinFetcher fetcher : fetchers) {
 			futures.add(pool.submit(fetcher::fetch));
 		}
 
-		/* 
-		 * Recoger resultados y procesar 
-		 */
+		// Recoger resultados y procesar cuando todas las llamadas hayan terminado
 		AID uiAgent = Utils.findAgent(myAgent, Utils.SERVICE_UI);
 		AID predictorAgent = Utils.findAgent(myAgent, Utils.SERVICE_PREDICTOR);
 
 		for (int i = 0; i < fetchers.size(); i++) {
 			try {
-				MarketData data = futures.get(i).get(); // espera este fetch
-				if (data == null) continue;
+				MarketData data = futures.get(i).get(); // Espera este fetch
+				if (data == null) continue; // Si hubo error, ya se notificó en CoinFetcher
 
 				String coinId = fetchers.get(i).getSymbol();
 				System.out.println("[AllCoinsFetch] " + coinId + " → " + data.getPrice());

@@ -11,8 +11,7 @@ import jade.core.behaviours.OneShotBehaviour;
 /*
  * Máquina de estados finitos (FSMBehaviour) para el estado de trading.
  *
- * Estados:
- *   HOLD ←→ BUY  ←→ SELL
+ * Estados hold, buy y sell que representan la posición actual de la cartera.
  *
  * Cada transición se dispara cuando el clasificador Weka emite una señal nueva.
  * En estado BUY/SELL se registra el precio de entrada para calcular beneficios y pérdidas.
